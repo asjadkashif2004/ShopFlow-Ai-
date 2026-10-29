@@ -1,0 +1,163 @@
+{
+  "categories": [
+    {
+      "slug": "headphones",
+      "name": "Headphones",
+      "singular": "headphones",
+      "keySpecs": ["batteryHours"],
+      "specs": [
+        { "key": "form", "label": "Type", "type": "text" },
+        { "key": "wireless", "label": "Wireless", "type": "bool" },
+        { "key": "anc", "label": "Noise cancelling", "type": "bool" },
+        { "key": "batteryHours", "label": "Battery", "type": "number", "unit": "h", "better": "higher" },
+        { "key": "weightG", "label": "Weight", "type": "number", "unit": "g", "better": "lower" },
+        { "key": "multipoint", "label": "Multipoint", "type": "bool" },
+        { "key": "mic", "label": "Built-in mic", "type": "bool" }
+      ]
+    },
+    {
+      "slug": "mice",
+      "name": "Mice",
+      "singular": "mouse",
+      "keySpecs": ["weightG"],
+      "specs": [
+        { "key": "wireless", "label": "Wireless", "type": "bool" },
+        { "key": "dpi", "label": "Max DPI", "type": "number", "better": "higher" },
+        { "key": "weightG", "label": "Weight", "type": "number", "unit": "g", "better": "lower" },
+        { "key": "pollingHz", "label": "Polling rate", "type": "number", "unit": "Hz", "better": "higher" },
+        { "key": "buttons", "label": "Buttons", "type": "number" },
+        { "key": "batteryHours", "label": "Battery", "type": "number", "unit": "h", "better": "higher" },
+        { "key": "shape", "label": "Shape", "type": "text" }
+      ]
+    },
+    {
+      "slug": "keyboards",
+      "name": "Keyboards",
+      "singular": "keyboard",
+      "keySpecs": [],
+      "specs": [
+        { "key": "layout", "label": "Layout", "type": "text" },
+        { "key": "switchType", "label": "Switches", "type": "text" },
+        { "key": "mechanical", "label": "Mechanical", "type": "bool" },
+        { "key": "wireless", "label": "Wireless", "type": "bool" },
+        { "key": "hotSwap", "label": "Hot-swap", "type": "bool" },
+        { "key": "rgb", "label": "RGB lighting", "type": "bool" },
+        { "key": "batteryHours", "label": "Battery", "type": "number", "unit": "h", "better": "higher" }
+      ]
+    },
+    {
+      "slug": "monitors",
+      "name": "Monitors",
+      "singular": "monitor",
+      "keySpecs": ["refreshHz"],
+      "specs": [
+        { "key": "sizeIn", "label": "Size", "type": "number", "unit": "\"" },
+        { "key": "resolution", "label": "Resolution", "type": "text" },
+        { "key": "refreshHz", "label": "Refresh rate", "type": "number", "unit": "Hz", "better": "higher" },
+        { "key": "panel", "label": "Panel", "type": "text" },
+        { "key": "responseMs", "label": "Response time", "type": "number", "unit": "ms", "better": "lower" },
+        { "key": "hdr", "label": "HDR", "type": "text" },
+        { "key": "usbCWatts", "label": "USB-C power", "type": "number", "unit": "W", "better": "higher" }
+      ]
+    },
+    {
+      "slug": "smartwatches",
+      "name": "Smartwatches",
+      "singular": "smartwatch",
+      "keySpecs": ["batteryDays"],
+      "specs": [
+        { "key": "display", "label": "Display", "type": "text" },
+        { "key": "batteryDays", "label": "Battery", "type": "number", "unit": "days", "better": "higher" },
+        { "key": "gps", "label": "Built-in GPS", "type": "bool" },
+        { "key": "waterRating", "label": "Water rating", "type": "text" },
+        { "key": "heartRate", "label": "Heart rate", "type": "bool" },
+        { "key": "spo2", "label": "Blood oxygen", "type": "bool" },
+        { "key": "nfcPay", "label": "Tap to pay", "type": "bool" },
+        { "key": "weightG", "label": "Weight", "type": "number", "unit": "g", "better": "lower" }
+      ]
+    },
+    {
+      "slug": "laptops",
+      "name": "Laptops",
+      "singular": "laptop",
+      "keySpecs": ["batteryHours"],
+      "specs": [
+        { "key": "cpu", "label": "Processor", "type": "text" },
+        { "key": "ramGb", "label": "Memory", "type": "number", "unit": "GB", "better": "higher" },
+        { "key": "storageGb", "label": "Storage", "type": "number", "unit": "GB", "better": "higher" },
+        { "key": "displayIn", "label": "Screen", "type": "number", "unit": "\"" },
+        { "key": "display", "label": "Display", "type": "text" },
+        { "key": "weightKg", "label": "Weight", "type": "number", "unit": "kg", "better": "lower" },
+        { "key": "batteryHours", "label": "Battery", "type": "number", "unit": "h", "better": "higher" },
+        { "key": "gpu", "label": "Graphics", "type": "text" }
+      ]
+    }
+  ],
+  "products": [
+    { "id": "hp-01", "category": "headphones", "name": "Aurex Q30 Wireless", "brand": "Aurex", "price": 79.99, "rating": 4.6, "reviewCount": 2140, "stock": 34, "description": "Over-ear wireless headphones with hybrid noise cancelling and a 40-hour battery.", "specs": { "form": "Over-ear", "wireless": true, "anc": true, "batteryHours": 40, "weightG": 254, "multipoint": true, "mic": true }, "tags": ["travel", "commute", "office"] },
+    { "id": "hp-02", "category": "headphones", "name": "Novabeat Pulse ANC", "brand": "Novabeat", "price": 64.99, "rating": 4.3, "reviewCount": 980, "stock": 51, "description": "Affordable noise-cancelling headphones with punchy bass and fast USB-C charging.", "specs": { "form": "Over-ear", "wireless": true, "anc": true, "batteryHours": 30, "weightG": 270, "multipoint": false, "mic": true }, "tags": ["commute", "budget"] },
+    { "id": "hp-03", "category": "headphones", "name": "Sonique Air 2", "brand": "Sonique", "price": 89.0, "rating": 4.5, "reviewCount": 3410, "stock": 22, "description": "Compact noise-cancelling earbuds with 28 hours of playback including the charging case.", "specs": { "form": "In-ear", "wireless": true, "anc": true, "batteryHours": 28, "weightG": 48, "multipoint": true, "mic": true }, "tags": ["travel", "commute", "fitness", "lightweight"] },
+    { "id": "hp-04", "category": "headphones", "name": "Hushwave Studio Pro", "brand": "Hushwave", "price": 119.99, "rating": 4.8, "reviewCount": 1250, "stock": 12, "description": "Class-leading noise cancelling, a 60-hour battery and plush memory-foam cushions.", "specs": { "form": "Over-ear", "wireless": true, "anc": true, "batteryHours": 60, "weightG": 262, "multipoint": true, "mic": true }, "tags": ["travel", "office", "commute"] },
+    { "id": "hp-05", "category": "headphones", "name": "Aurex Lite", "brand": "Aurex", "price": 39.99, "rating": 4.2, "reviewCount": 5600, "stock": 80, "description": "Featherweight on-ear headphones with 50 hours of playback. No noise cancelling.", "specs": { "form": "On-ear", "wireless": true, "anc": false, "batteryHours": 50, "weightG": 180, "multipoint": false, "mic": true }, "tags": ["budget", "student", "lightweight"] },
+    { "id": "hp-06", "category": "headphones", "name": "Novabeat Bass X", "brand": "Novabeat", "price": 49.99, "rating": 4.1, "reviewCount": 2310, "stock": 45, "description": "Bass-forward wireless headphones with a foldable frame for easy packing.", "specs": { "form": "Over-ear", "wireless": true, "anc": false, "batteryHours": 35, "weightG": 240, "multipoint": false, "mic": true }, "tags": ["budget", "student"] },
+    { "id": "hp-07", "category": "headphones", "name": "Sonique Buds Sport", "brand": "Sonique", "price": 34.99, "rating": 4.0, "reviewCount": 1870, "stock": 60, "description": "Sweat-resistant sport earbuds with secure ear hooks for runs and workouts.", "specs": { "form": "In-ear", "wireless": true, "anc": false, "batteryHours": 24, "weightG": 44, "multipoint": false, "mic": true }, "tags": ["fitness", "running", "budget", "lightweight"] },
+    { "id": "hp-08", "category": "headphones", "name": "Hushwave Q1", "brand": "Hushwave", "price": 99.0, "rating": 4.4, "reviewCount": 760, "stock": 18, "description": "Balanced, all-day comfortable noise-cancelling headphones with a 45-hour battery.", "specs": { "form": "Over-ear", "wireless": true, "anc": true, "batteryHours": 45, "weightG": 250, "multipoint": true, "mic": true }, "tags": ["travel", "office"] },
+    { "id": "hp-09", "category": "headphones", "name": "Kestrel H7 Gaming Headset", "brand": "Kestrel", "price": 59.99, "rating": 4.5, "reviewCount": 4020, "stock": 27, "description": "Wired gaming headset with virtual 7.1 surround and a detachable boom mic.", "specs": { "form": "Over-ear", "wireless": false, "anc": false, "batteryHours": null, "weightG": 290, "multipoint": false, "mic": true }, "tags": ["gaming"] },
+    { "id": "hp-10", "category": "headphones", "name": "Aurex Elite 900", "brand": "Aurex", "price": 249.0, "rating": 4.7, "reviewCount": 890, "stock": 9, "description": "Premium noise cancelling with spatial audio and studio-grade tuning.", "specs": { "form": "Over-ear", "wireless": true, "anc": true, "batteryHours": 32, "weightG": 248, "multipoint": true, "mic": true }, "tags": ["travel", "office", "premium"] },
+
+    { "id": "ms-01", "category": "mice", "name": "Kestrel Viper Lite", "brand": "Kestrel", "price": 29.99, "rating": 4.6, "reviewCount": 4200, "stock": 70, "description": "Ultralight wired gaming mouse with a precise 16K optical sensor.", "specs": { "wireless": false, "dpi": 16000, "weightG": 59, "pollingHz": 1000, "buttons": 6, "batteryHours": null, "shape": "Ambidextrous" }, "tags": ["gaming", "esports", "lightweight", "budget"] },
+    { "id": "ms-02", "category": "mice", "name": "Kestrel Viper Air", "brand": "Kestrel", "price": 79.99, "rating": 4.7, "reviewCount": 1530, "stock": 25, "description": "Wireless esports mouse with a 26K sensor and 4K polling.", "specs": { "wireless": true, "dpi": 26000, "weightG": 63, "pollingHz": 4000, "buttons": 6, "batteryHours": 90, "shape": "Ambidextrous" }, "tags": ["gaming", "esports", "lightweight"] },
+    { "id": "ms-03", "category": "mice", "name": "Vanta Strike", "brand": "Vanta", "price": 24.99, "rating": 4.2, "reviewCount": 3100, "stock": 90, "description": "Comfortable right-handed gaming mouse with 8 programmable buttons.", "specs": { "wireless": false, "dpi": 12000, "weightG": 85, "pollingHz": 1000, "buttons": 8, "batteryHours": null, "shape": "Right-handed" }, "tags": ["gaming", "budget"] },
+    { "id": "ms-04", "category": "mice", "name": "Vanta Strike Pro Wireless", "brand": "Vanta", "price": 49.99, "rating": 4.5, "reviewCount": 1800, "stock": 40, "description": "Low-latency wireless gaming mouse with a 70-hour battery.", "specs": { "wireless": true, "dpi": 19000, "weightG": 74, "pollingHz": 1000, "buttons": 7, "batteryHours": 70, "shape": "Right-handed" }, "tags": ["gaming"] },
+    { "id": "ms-05", "category": "mice", "name": "Glyde Feather 58", "brand": "Glyde", "price": 44.99, "rating": 4.6, "reviewCount": 960, "stock": 33, "description": "58-gram wireless gaming mouse with a 25.6K sensor.", "specs": { "wireless": true, "dpi": 25600, "weightG": 58, "pollingHz": 2000, "buttons": 5, "batteryHours": 80, "shape": "Ambidextrous" }, "tags": ["gaming", "esports", "lightweight"] },
+    { "id": "ms-06", "category": "mice", "name": "Glyde Office Silent", "brand": "Glyde", "price": 19.99, "rating": 4.3, "reviewCount": 2650, "stock": 120, "description": "Silent-click wireless mouse for the office that runs for months on one battery.", "specs": { "wireless": true, "dpi": 4000, "weightG": 95, "pollingHz": 125, "buttons": 6, "batteryHours": 700, "shape": "Right-handed" }, "tags": ["office", "quiet", "budget"] },
+    { "id": "ms-07", "category": "mice", "name": "Kestrel MMO 12", "brand": "Kestrel", "price": 39.99, "rating": 4.4, "reviewCount": 1420, "stock": 38, "description": "MMO gaming mouse with a 12-button side grid and 14 controls in total.", "specs": { "wireless": false, "dpi": 18000, "weightG": 110, "pollingHz": 1000, "buttons": 14, "batteryHours": null, "shape": "Right-handed" }, "tags": ["gaming", "mmo"] },
+    { "id": "ms-08", "category": "mice", "name": "Vanta Ergo Vertical", "brand": "Vanta", "price": 34.99, "rating": 4.1, "reviewCount": 990, "stock": 44, "description": "Vertical ergonomic mouse that keeps your wrist in a natural handshake position.", "specs": { "wireless": true, "dpi": 4000, "weightG": 120, "pollingHz": 125, "buttons": 6, "batteryHours": 1000, "shape": "Vertical" }, "tags": ["office", "ergonomic"] },
+    { "id": "ms-09", "category": "mice", "name": "Glyde Pro X Superlight", "brand": "Glyde", "price": 129.99, "rating": 4.8, "reviewCount": 2200, "stock": 15, "description": "Pro-grade 55-gram wireless mouse with a 32K sensor and 8K polling.", "specs": { "wireless": true, "dpi": 32000, "weightG": 55, "pollingHz": 8000, "buttons": 5, "batteryHours": 95, "shape": "Ambidextrous" }, "tags": ["gaming", "esports", "lightweight", "premium"] },
+    { "id": "ms-10", "category": "mice", "name": "Kestrel Basic USB", "brand": "Kestrel", "price": 9.99, "rating": 3.9, "reviewCount": 7400, "stock": 200, "description": "Simple, reliable plug-and-play USB mouse.", "specs": { "wireless": false, "dpi": 1600, "weightG": 90, "pollingHz": 125, "buttons": 3, "batteryHours": null, "shape": "Ambidextrous" }, "tags": ["office", "budget"] },
+
+    { "id": "kb-01", "category": "keyboards", "name": "Tactyl K75 Wireless", "brand": "Tactyl", "price": 74.99, "rating": 4.6, "reviewCount": 1320, "stock": 30, "description": "Compact 75% wireless mechanical keyboard with hot-swap tactile switches.", "specs": { "layout": "75%", "switchType": "Tactile", "mechanical": true, "wireless": true, "hotSwap": true, "rgb": true, "batteryHours": 200 }, "tags": ["office", "coding", "gaming"] },
+    { "id": "kb-02", "category": "keyboards", "name": "Tactyl K65", "brand": "Tactyl", "price": 49.99, "rating": 4.5, "reviewCount": 2080, "stock": 42, "description": "Wired 65% mechanical keyboard with smooth linear switches.", "specs": { "layout": "65%", "switchType": "Linear", "mechanical": true, "wireless": false, "hotSwap": true, "rgb": true, "batteryHours": null }, "tags": ["gaming", "coding", "budget"] },
+    { "id": "kb-03", "category": "keyboards", "name": "Keystone Forge TKL", "brand": "Keystone", "price": 59.99, "rating": 4.3, "reviewCount": 1750, "stock": 36, "description": "Tenkeyless mechanical keyboard with satisfying clicky switches.", "specs": { "layout": "TKL", "switchType": "Clicky", "mechanical": true, "wireless": false, "hotSwap": false, "rgb": true, "batteryHours": null }, "tags": ["gaming", "coding"] },
+    { "id": "kb-04", "category": "keyboards", "name": "Keystone Forge Pro Wireless", "brand": "Keystone", "price": 119.99, "rating": 4.7, "reviewCount": 640, "stock": 14, "description": "Full-size wireless mechanical keyboard with a volume dial and media keys.", "specs": { "layout": "Full-size", "switchType": "Linear", "mechanical": true, "wireless": true, "hotSwap": true, "rgb": true, "batteryHours": 120 }, "tags": ["gaming", "office", "premium"] },
+    { "id": "kb-05", "category": "keyboards", "name": "Vanta Silent Office", "brand": "Vanta", "price": 29.99, "rating": 4.2, "reviewCount": 3900, "stock": 85, "description": "Quiet full-size wireless keyboard for long office days.", "specs": { "layout": "Full-size", "switchType": "Membrane", "mechanical": false, "wireless": true, "hotSwap": false, "rgb": false, "batteryHours": 900 }, "tags": ["office", "quiet", "budget"] },
+    { "id": "kb-06", "category": "keyboards", "name": "Glyde Slim Low-Profile", "brand": "Glyde", "price": 89.99, "rating": 4.4, "reviewCount": 870, "stock": 26, "description": "Slim low-profile mechanical keyboard that pairs with three devices.", "specs": { "layout": "Full-size", "switchType": "Low-profile", "mechanical": true, "wireless": true, "hotSwap": false, "rgb": false, "batteryHours": 300 }, "tags": ["office", "coding", "slim"] },
+    { "id": "kb-07", "category": "keyboards", "name": "Tactyl K60 Mini", "brand": "Tactyl", "price": 39.99, "rating": 4.3, "reviewCount": 1610, "stock": 50, "description": "Tiny 60% mechanical keyboard that frees up desk space.", "specs": { "layout": "60%", "switchType": "Linear", "mechanical": true, "wireless": false, "hotSwap": true, "rgb": true, "batteryHours": null }, "tags": ["gaming", "budget", "travel"] },
+    { "id": "kb-08", "category": "keyboards", "name": "Keystone Aero 75", "brand": "Keystone", "price": 99.99, "rating": 4.8, "reviewCount": 1090, "stock": 20, "description": "Gasket-mounted 75% wireless keyboard with a premium aluminium case.", "specs": { "layout": "75%", "switchType": "Tactile", "mechanical": true, "wireless": true, "hotSwap": true, "rgb": true, "batteryHours": 250 }, "tags": ["coding", "office", "premium"] },
+    { "id": "kb-09", "category": "keyboards", "name": "Vanta Strike RGB", "brand": "Vanta", "price": 24.99, "rating": 3.9, "reviewCount": 2700, "stock": 95, "description": "Budget full-size gaming keyboard with rainbow lighting.", "specs": { "layout": "Full-size", "switchType": "Membrane", "mechanical": false, "wireless": false, "hotSwap": false, "rgb": true, "batteryHours": null }, "tags": ["gaming", "budget"] },
+    { "id": "kb-10", "category": "keyboards", "name": "Tactyl K98", "brand": "Tactyl", "price": 79.0, "rating": 4.5, "reviewCount": 730, "stock": 28, "description": "96% wireless mechanical keyboard that keeps the number pad in a compact frame.", "specs": { "layout": "96%", "switchType": "Tactile", "mechanical": true, "wireless": true, "hotSwap": true, "rgb": true, "batteryHours": 180 }, "tags": ["office", "coding"] },
+
+    { "id": "mn-01", "category": "monitors", "name": "Lumio View 27 4K", "brand": "Lumio", "price": 299.99, "rating": 4.5, "reviewCount": 1140, "stock": 21, "description": "Sharp 27-inch 4K IPS monitor with 65 W USB-C single-cable laptop charging.", "specs": { "sizeIn": 27, "resolution": "3840×2160", "refreshHz": 60, "panel": "IPS", "responseMs": 5, "hdr": "HDR400", "usbCWatts": 65 }, "tags": ["coding", "office", "creative"] },
+    { "id": "mn-02", "category": "monitors", "name": "Pixelgrade 27Q 165", "brand": "Pixelgrade", "price": 229.99, "rating": 4.6, "reviewCount": 2380, "stock": 30, "description": "27-inch 1440p gaming monitor with a fast 165 Hz IPS panel.", "specs": { "sizeIn": 27, "resolution": "2560×1440", "refreshHz": 165, "panel": "IPS", "responseMs": 1, "hdr": "HDR400", "usbCWatts": 0 }, "tags": ["gaming"] },
+    { "id": "mn-03", "category": "monitors", "name": "Vireo 24 FHD", "brand": "Vireo", "price": 109.99, "rating": 4.3, "reviewCount": 3050, "stock": 64, "description": "Dependable 24-inch 1080p monitor for study and office work.", "specs": { "sizeIn": 24, "resolution": "1920×1080", "refreshHz": 100, "panel": "IPS", "responseMs": 4, "hdr": "None", "usbCWatts": 0 }, "tags": ["office", "budget", "student"] },
+    { "id": "mn-04", "category": "monitors", "name": "Lumio Studio 32 4K", "brand": "Lumio", "price": 449.99, "rating": 4.7, "reviewCount": 520, "stock": 11, "description": "32-inch color-accurate 4K display with HDR600 and a 90 W USB-C hub.", "specs": { "sizeIn": 32, "resolution": "3840×2160", "refreshHz": 60, "panel": "IPS", "responseMs": 5, "hdr": "HDR600", "usbCWatts": 90 }, "tags": ["creative", "coding", "office", "premium"] },
+    { "id": "mn-05", "category": "monitors", "name": "Pixelgrade 27U Pro", "brand": "Pixelgrade", "price": 379.99, "rating": 4.6, "reviewCount": 810, "stock": 16, "description": "27-inch 4K monitor at 144 Hz for both work and play.", "specs": { "sizeIn": 27, "resolution": "3840×2160", "refreshHz": 144, "panel": "IPS", "responseMs": 1, "hdr": "HDR600", "usbCWatts": 65 }, "tags": ["gaming", "creative", "coding"] },
+    { "id": "mn-06", "category": "monitors", "name": "Vireo 34 Ultrawide", "brand": "Vireo", "price": 349.99, "rating": 4.4, "reviewCount": 960, "stock": 19, "description": "34-inch curved ultrawide that fits two full windows side by side.", "specs": { "sizeIn": 34, "resolution": "3440×1440", "refreshHz": 144, "panel": "VA", "responseMs": 1, "hdr": "HDR400", "usbCWatts": 0 }, "tags": ["coding", "gaming", "office"] },
+    { "id": "mn-07", "category": "monitors", "name": "Pixelgrade OLED 27", "brand": "Pixelgrade", "price": 649.99, "rating": 4.8, "reviewCount": 430, "stock": 7, "description": "27-inch 240 Hz OLED with perfect blacks and near-instant response.", "specs": { "sizeIn": 27, "resolution": "2560×1440", "refreshHz": 240, "panel": "OLED", "responseMs": 0.03, "hdr": "True Black 400", "usbCWatts": 0 }, "tags": ["gaming", "esports", "premium"] },
+    { "id": "mn-08", "category": "monitors", "name": "Lumio Code 28 4K", "brand": "Lumio", "price": 279.99, "rating": 4.3, "reviewCount": 690, "stock": 25, "description": "28-inch 4K monitor tuned for crisp text, with 65 W USB-C.", "specs": { "sizeIn": 28, "resolution": "3840×2160", "refreshHz": 60, "panel": "IPS", "responseMs": 4, "hdr": "None", "usbCWatts": 65 }, "tags": ["coding", "office"] },
+    { "id": "mn-09", "category": "monitors", "name": "Vireo 24G", "brand": "Vireo", "price": 139.99, "rating": 4.5, "reviewCount": 2210, "stock": 48, "description": "Budget 24-inch 180 Hz esports monitor.", "specs": { "sizeIn": 24, "resolution": "1920×1080", "refreshHz": 180, "panel": "IPS", "responseMs": 1, "hdr": "None", "usbCWatts": 0 }, "tags": ["gaming", "budget", "esports"] },
+    { "id": "mn-10", "category": "monitors", "name": "Vireo 27 4K Basic", "brand": "Vireo", "price": 239.99, "rating": 4.0, "reviewCount": 1320, "stock": 33, "description": "Entry-level 27-inch 4K monitor with a VA panel.", "specs": { "sizeIn": 27, "resolution": "3840×2160", "refreshHz": 60, "panel": "VA", "responseMs": 5, "hdr": "None", "usbCWatts": 0 }, "tags": ["office", "budget"] },
+
+    { "id": "sw-01", "category": "smartwatches", "name": "Strata Run 5", "brand": "Strata", "price": 179.99, "rating": 4.6, "reviewCount": 1980, "stock": 28, "description": "GPS running watch with an AMOLED screen and two weeks of battery.", "specs": { "display": "AMOLED", "batteryDays": 14, "gps": true, "waterRating": "5ATM", "heartRate": true, "spo2": true, "nfcPay": false, "weightG": 42 }, "tags": ["running", "fitness"] },
+    { "id": "sw-02", "category": "smartwatches", "name": "Pulsefit Active 2", "brand": "Pulsefit", "price": 149.99, "rating": 4.4, "reviewCount": 2640, "stock": 37, "description": "Everyday fitness smartwatch with GPS and tap-to-pay.", "specs": { "display": "AMOLED", "batteryDays": 10, "gps": true, "waterRating": "5ATM", "heartRate": true, "spo2": true, "nfcPay": true, "weightG": 38 }, "tags": ["fitness", "running"] },
+    { "id": "sw-03", "category": "smartwatches", "name": "Orbit Watch S", "brand": "Orbit", "price": 249.99, "rating": 4.5, "reviewCount": 3100, "stock": 24, "description": "Full-featured smartwatch with apps, notifications and payments.", "specs": { "display": "AMOLED", "batteryDays": 2, "gps": true, "waterRating": "5ATM", "heartRate": true, "spo2": true, "nfcPay": true, "weightG": 32 }, "tags": ["office", "fitness"] },
+    { "id": "sw-04", "category": "smartwatches", "name": "Strata Trail X", "brand": "Strata", "price": 329.99, "rating": 4.8, "reviewCount": 740, "stock": 10, "description": "Rugged multi-band GPS watch with 24-day battery for trails and ultras.", "specs": { "display": "MIP", "batteryDays": 24, "gps": true, "waterRating": "10ATM", "heartRate": true, "spo2": true, "nfcPay": true, "weightG": 52 }, "tags": ["running", "hiking", "premium"] },
+    { "id": "sw-05", "category": "smartwatches", "name": "Pulsefit Band 8", "brand": "Pulsefit", "price": 49.99, "rating": 4.3, "reviewCount": 6900, "stock": 150, "description": "Slim fitness tracker band with a 16-day battery. Uses your phone's GPS.", "specs": { "display": "AMOLED", "batteryDays": 16, "gps": false, "waterRating": "5ATM", "heartRate": true, "spo2": true, "nfcPay": false, "weightG": 22 }, "tags": ["fitness", "budget", "lightweight"] },
+    { "id": "sw-06", "category": "smartwatches", "name": "Orbit Watch Lite", "brand": "Orbit", "price": 59.99, "rating": 3.9, "reviewCount": 1150, "stock": 66, "description": "Basic smartwatch for notifications and step counting.", "specs": { "display": "LCD", "batteryDays": 7, "gps": false, "waterRating": "IP68", "heartRate": true, "spo2": false, "nfcPay": false, "weightG": 30 }, "tags": ["budget"] },
+    { "id": "sw-07", "category": "smartwatches", "name": "Strata Run 3", "brand": "Strata", "price": 119.99, "rating": 4.4, "reviewCount": 2280, "stock": 41, "description": "No-nonsense GPS running watch with a sunlight-readable display.", "specs": { "display": "MIP", "batteryDays": 12, "gps": true, "waterRating": "5ATM", "heartRate": true, "spo2": false, "nfcPay": false, "weightG": 39 }, "tags": ["running", "budget"] },
+    { "id": "sw-08", "category": "smartwatches", "name": "Pulsefit Pro GPS", "brand": "Pulsefit", "price": 199.0, "rating": 4.5, "reviewCount": 1060, "stock": 22, "description": "Training-focused smartwatch with GPS, recovery insights and tap-to-pay.", "specs": { "display": "AMOLED", "batteryDays": 7, "gps": true, "waterRating": "5ATM", "heartRate": true, "spo2": true, "nfcPay": true, "weightG": 45 }, "tags": ["running", "fitness"] },
+    { "id": "sw-09", "category": "smartwatches", "name": "Orbit Watch Ultra", "brand": "Orbit", "price": 399.99, "rating": 4.7, "reviewCount": 980, "stock": 8, "description": "Titanium adventure smartwatch with dual-band GPS and a dive rating.", "specs": { "display": "AMOLED", "batteryDays": 3, "gps": true, "waterRating": "10ATM", "heartRate": true, "spo2": true, "nfcPay": true, "weightG": 61 }, "tags": ["hiking", "premium"] },
+    { "id": "sw-10", "category": "smartwatches", "name": "Strata Kids Track", "brand": "Strata", "price": 79.99, "rating": 4.0, "reviewCount": 540, "stock": 35, "description": "Durable kids' watch with GPS location sharing and school mode.", "specs": { "display": "LCD", "batteryDays": 5, "gps": true, "waterRating": "IP68", "heartRate": true, "spo2": false, "nfcPay": false, "weightG": 28 }, "tags": ["kids"] },
+
+    { "id": "lp-01", "category": "laptops", "name": "Quill Air 13", "brand": "Quill", "price": 899.0, "rating": 4.7, "reviewCount": 2450, "stock": 19, "description": "Fanless 13.6-inch ultraportable with an 18-hour battery.", "specs": { "cpu": "8-core ARM", "ramGb": 16, "storageGb": 512, "displayIn": 13.6, "display": "2560×1664 IPS", "weightKg": 1.24, "batteryHours": 18, "gpu": "Integrated" }, "tags": ["student", "lightweight", "travel", "coding"] },
+    { "id": "lp-02", "category": "laptops", "name": "Meridian Arc 14", "brand": "Meridian", "price": 749.0, "rating": 4.5, "reviewCount": 1310, "stock": 23, "description": "Light 14-inch laptop with 16 GB of memory and an all-day battery.", "specs": { "cpu": "Intel Core Ultra 5", "ramGb": 16, "storageGb": 512, "displayIn": 14, "display": "1920×1200 IPS", "weightKg": 1.35, "batteryHours": 14, "gpu": "Integrated" }, "tags": ["student", "lightweight", "office", "coding"] },
+    { "id": "lp-03", "category": "laptops", "name": "Halcyon Book 15", "brand": "Halcyon", "price": 499.0, "rating": 4.1, "reviewCount": 3820, "stock": 41, "description": "Affordable 15.6-inch everyday laptop for school and browsing.", "specs": { "cpu": "AMD Ryzen 5", "ramGb": 8, "storageGb": 256, "displayIn": 15.6, "display": "1920×1080 IPS", "weightKg": 1.7, "batteryHours": 9, "gpu": "Integrated" }, "tags": ["student", "budget", "office"] },
+    { "id": "lp-04", "category": "laptops", "name": "Halcyon Strike 16", "brand": "Halcyon", "price": 1199.0, "rating": 4.6, "reviewCount": 860, "stock": 12, "description": "16-inch gaming laptop with a 165 Hz screen and dedicated graphics.", "specs": { "cpu": "AMD Ryzen 7", "ramGb": 16, "storageGb": 1000, "displayIn": 16, "display": "2560×1600 165Hz", "weightKg": 2.3, "batteryHours": 6, "gpu": "GeForce RTX 4060" }, "tags": ["gaming", "creative"] },
+    { "id": "lp-05", "category": "laptops", "name": "Meridian Arc 13 Lite", "brand": "Meridian", "price": 649.0, "rating": 4.3, "reviewCount": 1540, "stock": 30, "description": "1.1 kg 13-inch laptop that slips into any backpack.", "specs": { "cpu": "Intel Core i5", "ramGb": 8, "storageGb": 512, "displayIn": 13.3, "display": "1920×1080 IPS", "weightKg": 1.1, "batteryHours": 12, "gpu": "Integrated" }, "tags": ["student", "lightweight", "travel"] },
+    { "id": "lp-06", "category": "laptops", "name": "Quill Pro 14", "brand": "Quill", "price": 1599.0, "rating": 4.9, "reviewCount": 1120, "stock": 9, "description": "Pro 14-inch laptop with a mini-LED display and 20-hour battery.", "specs": { "cpu": "12-core ARM", "ramGb": 18, "storageGb": 1000, "displayIn": 14.2, "display": "3024×1964 mini-LED", "weightKg": 1.55, "batteryHours": 20, "gpu": "Integrated 18-core" }, "tags": ["creative", "coding", "premium"] },
+    { "id": "lp-07", "category": "laptops", "name": "Halcyon Chromebook 14", "brand": "Halcyon", "price": 299.0, "rating": 4.0, "reviewCount": 2900, "stock": 58, "description": "Simple, secure Chromebook for homework and streaming.", "specs": { "cpu": "Intel N200", "ramGb": 8, "storageGb": 128, "displayIn": 14, "display": "1920×1080", "weightKg": 1.4, "batteryHours": 11, "gpu": "Integrated" }, "tags": ["student", "budget"] },
+    { "id": "lp-08", "category": "laptops", "name": "Meridian Flex 14 2-in-1", "brand": "Meridian", "price": 799.0, "rating": 4.4, "reviewCount": 690, "stock": 17, "description": "Convertible 14-inch touchscreen laptop with pen support.", "specs": { "cpu": "AMD Ryzen 5", "ramGb": 16, "storageGb": 512, "displayIn": 14, "display": "1920×1200 touch", "weightKg": 1.5, "batteryHours": 12, "gpu": "Integrated" }, "tags": ["student", "office", "creative"] },
+    { "id": "lp-09", "category": "laptops", "name": "Halcyon Creator 16", "brand": "Halcyon", "price": 1899.0, "rating": 4.7, "reviewCount": 410, "stock": 6, "description": "16-inch OLED creator laptop with 32 GB of memory and RTX graphics.", "specs": { "cpu": "Intel Core Ultra 9", "ramGb": 32, "storageGb": 1000, "displayIn": 16, "display": "3200×2000 OLED", "weightKg": 1.9, "batteryHours": 10, "gpu": "GeForce RTX 4070" }, "tags": ["creative", "gaming", "premium"] },
+    { "id": "lp-10", "category": "laptops", "name": "Quill Air 15", "brand": "Quill", "price": 1099.0, "rating": 4.7, "reviewCount": 980, "stock": 14, "description": "Big-screen 15.3-inch ultraportable that still weighs just 1.5 kg.", "specs": { "cpu": "8-core ARM", "ramGb": 16, "storageGb": 512, "displayIn": 15.3, "display": "2880×1864 IPS", "weightKg": 1.51, "batteryHours": 18, "gpu": "Integrated" }, "tags": ["student", "travel", "coding"] }
+  ]
+}

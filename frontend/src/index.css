@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Ink: the deep navy used for text, the mission panel and primary buttons */
+  --color-ink-950: #060a13;
+  --color-ink-900: #0a1020;
+  --color-ink-800: #121a2e;
+  --color-ink-700: #1c2640;
+  --color-ink-600: #2a3656;
+
+  --color-canvas: #f5f6f8;
+
+  /* Accent: one calm indigo-blue */
+  --color-accent-50: #eef2ff;
+  --color-accent-100: #e0e7ff;
+  --color-accent-200: #c3cffe;
+  --color-accent-300: #9aaefc;
+  --color-accent-400: #6f86f7;
+  --color-accent-500: #4c63ee;
+  --color-accent-600: #3a4dd8;
+  --color-accent-700: #2f3eae;
+
+  --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px -12px rgb(16 24 40 / 0.12);
+  --shadow-lift: 0 1px 2px rgb(16 24 40 / 0.05), 0 28px 56px -28px rgb(16 24 40 / 0.28);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-accent-100);
+  color: var(--color-ink-900);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-400);
+  outline-offset: 2px;
+}
+
+/* Faint grid behind the mission panel */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Dotted texture behind the hero */
+.bg-dots {
+  background-image: radial-gradient(rgb(15 23 42 / 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eceef2 0%, #f6f7f9 50%, #eceef2 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
