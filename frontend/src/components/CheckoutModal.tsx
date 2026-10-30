@@ -278,7 +278,17 @@ function LivePayPal({
   onError: () => void
 }) {
   return (
-    <PayPalScriptProvider options={{ clientId, currency, intent: 'capture', components: 'buttons' }}>
+    <PayPalScriptProvider
+      options={{
+        clientId,
+        currency,
+        intent: 'capture',
+        components: 'buttons',
+        // Keep the demo simple: PayPal wallet + debit/credit card (sandbox test cards work here).
+        enableFunding: 'card',
+        disableFunding: 'paylater,venmo',
+      }}
+    >
       <PayPalButtonsWithLoader busy={busy} onCreate={onCreate} onApprove={onApprove} onCancel={onCancel} onError={onError} />
     </PayPalScriptProvider>
   )
