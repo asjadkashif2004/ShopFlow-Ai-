@@ -1,11 +1,19 @@
 import { ArrowRight, Package } from 'lucide-react'
 import { motion } from 'motion/react'
-import type { Order } from '../api/types'
+import type { AppConfig, Order } from '../api/types'
 import { cn, formatDate, formatPrice } from '../lib/format'
 import { EASE } from '../lib/motion'
 import { ProductVisual } from './ui'
 
-export function OrdersView({ orders, mode, onShop }: { orders: Order[]; mode: 'demo' | 'live' | null; onShop: () => void }) {
+function subtitle(config: AppConfig | null) {
+  if (!config || config.mode === 'demo') return 'Simulated orders, saved in this browser.'
+  const where = config.database === 'postgres' ? 'Saved in Supabase.' : 'Saved on the server until it restarts.'
+  return config.paypalMode === 'sandbox'
+    ? `${where} Payments are captured through PayPal Sandbox, so no real money moves.`
+    : `${where} Payments are simulated until PayPal Sandbox keys are added.`
+}
+
+export function OrdersView({ orders, config, onShop }: { orders: Order[]; config: AppConfig | null; onShop: () => void }) {
   const total = orders.filter((o) => o.status === 'COMPLETED').reduce((sum, o) => sum + o.amount, 0)
   return (
     <motion.div
@@ -18,11 +26,7 @@ export function OrdersView({ orders, mode, onShop }: { orders: Order[]; mode: 'd
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-ink-900">Orders</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {mode === 'live'
-              ? 'Payments captured through PayPal Sandbox. No real money moves.'
-              : 'Simulated sandbox orders, saved in this browser.'}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle(config)}</p>
         </div>
         {orders.length > 0 && (
           <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-soft ring-1 ring-slate-200/80">

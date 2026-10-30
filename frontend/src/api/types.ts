@@ -118,7 +118,8 @@ export interface MissionResult {
 export type MissionEvent =
   | { type: 'mission_started'; missionId: string; query: string; catalogSize: number }
   | { type: 'agent_started'; agent: AgentId; message: string }
-  | { type: 'agent_completed'; agent: AgentId; message: string; durationMs: number }
+  /** engine: what did the work, e.g. "gpt-oss-120b", "SQL", "rules". */
+  | { type: 'agent_completed'; agent: AgentId; message: string; durationMs: number; engine?: string }
   | { type: 'intent'; intent: Intent }
   | { type: 'stats'; stats: Partial<MissionStats> }
   | { type: 'result'; result: MissionResult }
@@ -139,13 +140,19 @@ export interface Order {
   currency: string
   status: OrderStatus
   missionId: string | null
+  paymentMode?: 'sandbox' | 'simulated'
   createdAt: string
 }
 
 export interface AppConfig {
-  /** demo = everything simulated in the browser; live = FastAPI backend + PayPal Sandbox. */
+  /** demo = everything simulated in the browser; live = the FastAPI backend. */
   mode: 'demo' | 'live'
+  /** sandbox = real PayPal Sandbox buttons; simulated = no PayPal keys yet. */
+  paypalMode: 'sandbox' | 'simulated'
   paypalClientId: string | null
   currency: string
   catalogSize: number
+  database: 'postgres' | 'memory' | 'browser'
+  /** e.g. "groq:openai/gpt-oss-120b" or "rules" */
+  ai: string
 }

@@ -5,9 +5,12 @@ import { applyBudget, buildResult, catalog, parseIntent, searchCatalog } from '.
 
 export const demoConfig: AppConfig = {
   mode: 'demo',
+  paypalMode: 'simulated',
   paypalClientId: null,
   currency: 'USD',
   catalogSize: catalog.products.length,
+  database: 'browser',
+  ai: 'rules',
 }
 
 function sleep(ms: number, signal: AbortSignal) {
@@ -159,6 +162,7 @@ export const demoApi: ShopApi = {
       currency: 'USD',
       status: 'COMPLETED',
       missionId: info.missionId,
+      paymentMode: 'simulated',
       createdAt: new Date().toISOString(),
     }
     saveOrders([order, ...loadOrders()])

@@ -262,8 +262,22 @@ function AgentRow({ id, agent, last }: { id: AgentId; agent: AgentState; last: b
 
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="flex items-center justify-between gap-2">
-          <span className={cn('text-sm font-medium', s === 'idle' || s === 'skipped' ? 'text-white/45' : 'text-white')}>
-            {meta.name}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className={cn('truncate text-sm font-medium', s === 'idle' || s === 'skipped' ? 'text-white/45' : 'text-white')}>
+              {meta.name}
+            </span>
+            <AnimatePresence>
+              {s === 'done' && agent.engine && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  title={`Handled by ${agent.engine}`}
+                  className="shrink-0 rounded-md bg-white/[0.07] px-1.5 py-px font-mono text-[10px] text-white/60 ring-1 ring-white/10"
+                >
+                  {agent.engine}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </span>
           {s === 'running' && <span className="text-[11px] font-medium text-accent-200">working…</span>}
           {s === 'done' && agent.durationMs !== null && (

@@ -1,11 +1,12 @@
 import { Navigation, Receipt, Search } from 'lucide-react'
 import { motion } from 'motion/react'
+import type { AppConfig } from '../api/types'
 import { cn } from '../lib/format'
 
 interface Props {
   active: 'shop' | 'orders'
   ordersCount: number
-  mode: 'demo' | 'live' | null
+  config: AppConfig | null
   onLogo: () => void
   onShop: () => void
   onOrders: () => void
@@ -20,26 +21,29 @@ export function Logo() {
   )
 }
 
-function ModeBadge({ mode }: { mode: Props['mode'] }) {
-  if (!mode) return null
-  const live = mode === 'live'
+const DB_LABEL = { postgres: 'Supabase', memory: 'in-memory', browser: 'browser' } as const
+
+function ModeBadge({ config }: { config: AppConfig | null }) {
+  if (!config) return null
+  const live = config.mode === 'live'
+  const sandbox = config.paypalMode === 'sandbox'
+  const ai = config.ai.startsWith('groq:') ? `Groq ${config.ai.split('/').pop()}` : 'rules'
+  const title = live
+    ? `Live backend · AI: ${ai} · Database: ${DB_LABEL[config.database]} · Payments: ${sandbox ? 'PayPal Sandbox' : 'simulated until PayPal keys are added'}`
+    : 'Demo mode: the agents and checkout are simulated in your browser.'
   return (
     <span
-      title={
-        live
-          ? 'Connected to the ShopPilot backend. Payments use PayPal Sandbox, so no real money moves.'
-          : 'Running in demo mode: the agents and checkout are simulated in your browser.'
-      }
+      title={title}
       className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
     >
-      <span className={cn('size-1.5 rounded-full', live ? 'bg-emerald-500' : 'bg-amber-400')} />
-      <span className="sm:hidden">{live ? 'Sandbox' : 'Demo'}</span>
-      <span className="hidden sm:inline">{live ? 'PayPal Sandbox' : 'Demo mode'}</span>
+      <span className={cn('size-1.5 rounded-full', live ? (sandbox ? 'bg-emerald-500' : 'bg-sky-500') : 'bg-amber-400')} />
+      <span className="sm:hidden">{live ? 'Live' : 'Demo'}</span>
+      <span className="hidden sm:inline">{live ? (sandbox ? 'Live · PayPal Sandbox' : 'Live · test payments') : 'Demo mode'}</span>
     </span>
   )
 }
 
-export function Header({ active, ordersCount, mode, onLogo, onShop, onOrders }: Props) {
+export function Header({ active, ordersCount, config, onLogo, onShop, onOrders }: Props) {
   const tabs = [
     { id: 'shop' as const, label: 'Shop', Icon: Search, onClick: onShop },
     { id: 'orders' as const, label: 'Orders', Icon: Receipt, onClick: onOrders, count: ordersCount },
@@ -89,7 +93,7 @@ export function Header({ active, ordersCount, mode, onLogo, onShop, onOrders }: 
         </nav>
 
         <div className="ml-auto">
-          <ModeBadge mode={mode} />
+          <ModeBadge config={config} />
         </div>
       </div>
     </header>

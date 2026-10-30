@@ -8,6 +8,7 @@ export interface AgentState {
   status: AgentStatus
   message: string
   durationMs: number | null
+  engine: string | null
 }
 
 export interface MissionState {
@@ -26,7 +27,7 @@ export interface MissionState {
 export const AGENT_ORDER: AgentId[] = ['intent', 'search', 'budget', 'compare', 'explain']
 
 const freshAgents = (): Record<AgentId, AgentState> =>
-  Object.fromEntries(AGENT_ORDER.map((id) => [id, { status: 'idle', message: '', durationMs: null }])) as Record<
+  Object.fromEntries(AGENT_ORDER.map((id) => [id, { status: 'idle', message: '', durationMs: null, engine: null }])) as Record<
     AgentId,
     AgentState
   >
@@ -68,12 +69,15 @@ function reducer(state: MissionState, action: Action): MissionState {
         case 'agent_started':
           return {
             ...state,
-            agents: { ...state.agents, [e.agent]: { status: 'running', message: e.message, durationMs: null } },
+            agents: { ...state.agents, [e.agent]: { status: 'running', message: e.message, durationMs: null, engine: null } },
           }
         case 'agent_completed':
           return {
             ...state,
-            agents: { ...state.agents, [e.agent]: { status: 'done', message: e.message, durationMs: e.durationMs } },
+            agents: {
+              ...state.agents,
+              [e.agent]: { status: 'done', message: e.message, durationMs: e.durationMs, engine: e.engine ?? null },
+            },
           }
         case 'intent':
           return { ...state, intent: e.intent }
@@ -84,7 +88,8 @@ function reducer(state: MissionState, action: Action): MissionState {
         case 'mission_completed': {
           const agents = { ...state.agents }
           for (const id of AGENT_ORDER) {
-            if (agents[id].status === 'idle') agents[id] = { status: 'skipped', message: 'Not needed', durationMs: null }
+            if (agents[id].status === 'idle')
+              agents[id] = { status: 'skipped', message: 'Not needed', durationMs: null, engine: null }
           }
           return { ...state, agents, status: 'done', durationMs: e.durationMs }
         }

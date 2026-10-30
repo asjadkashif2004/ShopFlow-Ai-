@@ -62,7 +62,7 @@ export default function App() {
         <Header
           active={view === 'orders' ? 'orders' : 'shop'}
           ordersCount={orders.length}
-          mode={handle?.config.mode ?? null}
+          config={handle?.config ?? null}
           onLogo={goHome}
           onShop={() => setView(state.status === 'idle' ? 'home' : 'mission')}
           onOrders={goOrders}
@@ -74,7 +74,7 @@ export default function App() {
             {view === 'mission' && (
               <MissionView key="mission" state={state} onSearch={runSearch} onNewSearch={goHome} onBuy={setCheckout} />
             )}
-            {view === 'orders' && <OrdersView key="orders" orders={orders} mode={handle?.config.mode ?? null} onShop={goHome} />}
+            {view === 'orders' && <OrdersView key="orders" orders={orders} config={handle?.config ?? null} onShop={goHome} />}
           </AnimatePresence>
         </main>
 

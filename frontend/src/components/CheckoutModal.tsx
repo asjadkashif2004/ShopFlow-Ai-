@@ -109,7 +109,7 @@ export function CheckoutModal({ rec, intent, missionId, handle, onClose, onCompl
 
             <AnimatePresence mode="wait" initial={false}>
               {step === 'success' && order ? (
-                <Receipt key="receipt" order={order} demo={handle?.config.mode !== 'live'} onClose={onClose} onViewOrders={onViewOrders} />
+                <Receipt key="receipt" order={order} demo={order.paymentMode !== 'sandbox'} onClose={onClose} onViewOrders={onViewOrders} />
               ) : (
                 <motion.div
                   key="review"
@@ -147,8 +147,7 @@ export function CheckoutModal({ rec, intent, missionId, handle, onClose, onCompl
                     </AnimatePresence>
 
                     <div className="mt-5">
-                      {handle?.config.mode === 'live' ? (
-                        handle.config.paypalClientId ? (
+                      {handle?.config.paypalMode === 'sandbox' && handle.config.paypalClientId ? (
                           <LivePayPal
                             clientId={handle.config.paypalClientId}
                             currency={handle.config.currency}
@@ -170,13 +169,14 @@ export function CheckoutModal({ rec, intent, missionId, handle, onClose, onCompl
                             onCancel={() => setError('Payment cancelled. Nothing was charged.')}
                             onError={() => setError('PayPal could not start the payment. Please try again.')}
                           />
-                        ) : (
-                          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200">
-                            The server has no PayPal client ID yet. Add PAYPAL_CLIENT_ID to enable checkout.
-                          </p>
-                        )
                       ) : (
-                        <DemoPayment stage={stage} busy={step === 'processing'} price={rec.product.price} onPay={runDemo} />
+                        <DemoPayment
+                          stage={stage}
+                          busy={step === 'processing'}
+                          price={rec.product.price}
+                          onPay={runDemo}
+                          serverSide={handle?.config.mode === 'live'}
+                        />
                       )}
                     </div>
 
@@ -315,14 +315,27 @@ function PayPalButtonsWithLoader({
 
 const DEMO_STEPS = ['Create the PayPal order', 'Buyer approves in PayPal', 'Capture the payment']
 
-function DemoPayment({ stage, busy, price, onPay }: { stage: number; busy: boolean; price: number; onPay: () => void }) {
+function DemoPayment({
+  stage,
+  busy,
+  price,
+  onPay,
+  serverSide,
+}: {
+  stage: number
+  busy: boolean
+  price: number
+  onPay: () => void
+  serverSide: boolean
+}) {
   return (
     <div>
       <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200/70">
-        <p className="text-sm font-semibold text-ink-900">Demo checkout</p>
+        <p className="text-sm font-semibold text-ink-900">Test checkout</p>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          PayPal Sandbox keys aren't connected yet, so this runs the same three steps in your browser. Once the keys
-          are added, the official PayPal button appears here instead.
+          PayPal Sandbox keys aren't connected yet, so the {serverSide ? 'server simulates' : 'browser simulates'} the
+          same three steps{serverSide ? ' and saves the order' : ''}. Once the keys are added, the official PayPal button
+          appears here instead.
         </p>
         <ol className="mt-4 space-y-2.5">
           {DEMO_STEPS.map((label, i) => {
