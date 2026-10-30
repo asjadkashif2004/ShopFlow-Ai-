@@ -9,6 +9,7 @@ Mirrors frontend/src/demo/engine.ts so demo mode and live mode behave the same.
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from typing import Any
@@ -623,7 +624,9 @@ def reasons_for(p: Product, pool: list[Product], intent: Intent, category: Categ
             continue
         vals = [x for x in (_num(o["specs"].get(key)) for o in pool) if x is not None]
         best = max(vals) if way == "higher" else min(vals)
-        if len(vals) > 1 and v == best:
+        if len(vals) > 1 and all(x == vals[0] for x in vals):
+            out.append(f"{d['label']}: {fmt_spec(d, v)}, same as every match")
+        elif len(vals) > 1 and v == best:
             out.append(f"{_best_phrase(d)} of your matches: {fmt_spec(d, v)}")
         elif len(vals) > 1:
             avg = sum(vals) / len(vals)
@@ -867,6 +870,87 @@ def build_result(
         "notice": notice,
         "refinements": refinements_for(intent, category, recs, near),
     }
+
+
+# --------------------------------------------------------------------------- #
+# Agent "show your work" details for the UI
+# --------------------------------------------------------------------------- #
+
+
+def _clean_num(v: Any) -> Any:
+    return int(v) if isinstance(v, float) and v.is_integer() else v
+
+
+def _plan_item(r: Req) -> dict[str, Any]:
+    if r.get("tag"):
+        return {"tag": r["tag"]}
+    if r.get("direction"):
+        return {"spec": r["spec"], "direction": r["direction"]}
+    if "min" in r:
+        return {"spec": r["spec"], "min": _clean_num(r["min"])}
+    return {"spec": r["spec"], "equals": r["equals"]}
+
+
+def intent_plan_text(intent: Intent) -> str:
+    """The validated intent as compact JSON: one requirement per line."""
+    dump = lambda v: json.dumps(v, ensure_ascii=False)  # noqa: E731
+
+    def arr(kind: str) -> str:
+        items = [dump(_plan_item(r)) for r in intent["requirements"] if r["kind"] == kind]
+        return "[]" if not items else "[\n    " + ",\n    ".join(items) + "\n  ]"
+
+    return "\n".join(
+        [
+            "{",
+            f'  "category": {dump(intent["category"])},',
+            f'  "maxPrice": {dump(_clean_num(intent["maxPrice"]))},',
+            f'  "must": {arr("must")},',
+            f'  "prefer": {arr("prefer")},',
+            f'  "emphasis": {dump(intent["emphasis"])}',
+            "}",
+        ]
+    )
+
+
+def sql_preview(slug: str, musts: list[Req]) -> str:
+    """Readable version of the parameterised search query (for display only)."""
+    q = lambda s: str(s).replace("'", "''")  # noqa: E731
+    lines = ["select id, name, price, rating", "from products", f"where category = '{q(slug)}'"]
+    for r in musts:
+        if r.get("tag"):
+            lines.append(f"  and '{q(r['tag'])}' = any(tags)")
+        elif "equals" in r:
+            lines.append(f"  and specs @> '{q(json.dumps({r['spec']: r['equals']}, ensure_ascii=False))}'")
+        elif "min" in r:
+            lines.append(f"  and (specs ->> '{q(r['spec'])}')::float8 >= {fmt_num(r['min'])}")
+    lines.append("order by price;")
+    return "\n".join(lines)
+
+
+def _line(name: str, right: str, width: int = 26) -> str:
+    name = name if len(name) <= width else name[: width - 1] + "…"
+    return f"{name:<{width}} {right:>9}"
+
+
+def budget_detail(within: list[Product], over: list[Product], max_price: float | None) -> str:
+    if max_price is None:
+        return "No budget given, so every match stays in.\n\n" + "\n".join(f"✓ {_line(p['name'], fmt_price(p['price']))}" for p in within)
+    rows = [f"Budget: {fmt_budget(max_price)}", ""]
+    rows += [f"✓ {_line(p['name'], fmt_price(p['price']))}" for p in within]
+    rows += [f"✕ {_line(p['name'], fmt_price(p['price']))}  +{fmt_price(p['price'] - max_price)}" for p in over]
+    return "\n".join(rows)
+
+
+def compare_detail(result: dict[str, Any]) -> str:
+    w = result["weights"]
+    rows = ["Weights  " + " · ".join(f"{k} {round(v * 100)}%" for k, v in w.items()), ""]
+    for r in result["recommendations"]:
+        b = r["breakdown"]
+        rows.append(f"#{r['rank']} {_line(r['product']['name'], str(r['score']), 24)}")
+        rows.append(f"   value {b['value']} · rating {b['rating']} · fit {b['fit']} · specs {b['specs']}")
+    if not result["recommendations"]:
+        rows.append("Nothing within budget to rank.")
+    return "\n".join(rows)
 
 
 def explain_facts(result: dict[str, Any]) -> dict[str, Any]:

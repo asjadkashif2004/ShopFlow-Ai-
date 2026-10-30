@@ -1,6 +1,6 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { getApi } from '../api'
-import type { AgentId, Intent, MissionEvent, MissionResult, MissionStats } from '../api/types'
+import type { AgentDetail, AgentId, Intent, MissionEvent, MissionResult, MissionStats } from '../api/types'
 
 export type AgentStatus = 'idle' | 'running' | 'done' | 'skipped'
 
@@ -9,6 +9,7 @@ export interface AgentState {
   message: string
   durationMs: number | null
   engine: string | null
+  detail: AgentDetail | null
 }
 
 export interface MissionState {
@@ -27,7 +28,9 @@ export interface MissionState {
 export const AGENT_ORDER: AgentId[] = ['intent', 'search', 'budget', 'compare', 'explain']
 
 const freshAgents = (): Record<AgentId, AgentState> =>
-  Object.fromEntries(AGENT_ORDER.map((id) => [id, { status: 'idle', message: '', durationMs: null, engine: null }])) as Record<
+  Object.fromEntries(
+    AGENT_ORDER.map((id) => [id, { status: 'idle', message: '', durationMs: null, engine: null, detail: null }]),
+  ) as Record<
     AgentId,
     AgentState
   >
@@ -69,14 +72,23 @@ function reducer(state: MissionState, action: Action): MissionState {
         case 'agent_started':
           return {
             ...state,
-            agents: { ...state.agents, [e.agent]: { status: 'running', message: e.message, durationMs: null, engine: null } },
+            agents: {
+              ...state.agents,
+              [e.agent]: { status: 'running', message: e.message, durationMs: null, engine: null, detail: null },
+            },
           }
         case 'agent_completed':
           return {
             ...state,
             agents: {
               ...state.agents,
-              [e.agent]: { status: 'done', message: e.message, durationMs: e.durationMs, engine: e.engine ?? null },
+              [e.agent]: {
+                status: 'done',
+                message: e.message,
+                durationMs: e.durationMs,
+                engine: e.engine ?? null,
+                detail: e.detail ?? null,
+              },
             },
           }
         case 'intent':
@@ -89,7 +101,7 @@ function reducer(state: MissionState, action: Action): MissionState {
           const agents = { ...state.agents }
           for (const id of AGENT_ORDER) {
             if (agents[id].status === 'idle')
-              agents[id] = { status: 'skipped', message: 'Not needed', durationMs: null, engine: null }
+              agents[id] = { status: 'skipped', message: 'Not needed', durationMs: null, engine: null, detail: null }
           }
           return { ...state, agents, status: 'done', durationMs: e.durationMs }
         }

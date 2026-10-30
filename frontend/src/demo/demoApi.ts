@@ -1,6 +1,7 @@
 import type { ShopApi } from '../api/client'
-import type { AgentId, AppConfig, MissionEvent, Order } from '../api/types'
+import type { AgentDetail, AgentId, AppConfig, MissionEvent, Order } from '../api/types'
 import { formatBudget } from '../lib/format'
+import { budgetDetail, compareDetail, explainFacts, intentPlanText, sqlPreview } from './details'
 import { applyBudget, buildResult, catalog, parseIntent, searchCatalog } from './engine'
 
 export const demoConfig: AppConfig = {
@@ -69,12 +70,14 @@ export const demoApi: ShopApi = {
       timers.set(agent, performance.now())
       emit({ type: 'agent_started', agent, message })
     }
-    const finish = (agent: AgentId, message: string) =>
+    const finish = (agent: AgentId, message: string, detail?: AgentDetail, engine?: string) =>
       emit({
         type: 'agent_completed',
         agent,
         message,
         durationMs: Math.round(performance.now() - (timers.get(agent) ?? performance.now())),
+        detail,
+        engine,
       })
 
     emit({ type: 'mission_started', missionId, query, catalogSize: catalog.products.length })
@@ -84,7 +87,12 @@ export const demoApi: ShopApi = {
     await sleep(700, signal)
     const intent = parseIntent(query)
     emit({ type: 'intent', intent })
-    finish('intent', intent.category ? intent.summary : "Couldn't tell which product type you want")
+    finish(
+      'intent',
+      intent.category ? intent.summary : "Couldn't tell which product type you want",
+      { label: 'Parsed in your browser (demo rules)', language: 'json', content: intentPlanText(intent) },
+      'rules',
+    )
 
     if (!intent.category) {
       emit({ type: 'result', result: buildResult(missionId, query, intent) })
@@ -106,6 +114,11 @@ export const demoApi: ShopApi = {
       mustCount
         ? `${inCategory.length} ${category!.name.toLowerCase()} found · ${matched.length} have every must-have`
         : `${inCategory.length} ${category!.name.toLowerCase()} found`,
+      {
+        label: 'Equivalent SQL (the demo filters in your browser)',
+        language: 'sql',
+        content: sqlPreview(category!.slug, intent.requirements.filter((r) => r.kind === 'must')),
+      },
     )
 
     // 3. Budget
@@ -119,6 +132,7 @@ export const demoApi: ShopApi = {
     finish(
       'budget',
       intent.maxPrice !== null ? `${within.length} within budget · ${over.length} over` : `${within.length} options in range`,
+      { label: 'Price check', language: 'text', content: budgetDetail(within, over, intent.maxPrice) },
     )
 
     // 4. Compare
@@ -126,13 +140,24 @@ export const demoApi: ShopApi = {
     await sleep(850, signal)
     const result = buildResult(missionId, query, intent)
     const top = result.recommendations[0]
-    finish('compare', top ? `Ranked ${within.length} · top score ${top.score}/100` : 'Nothing left to rank')
+    finish('compare', top ? `Ranked ${within.length} · top score ${top.score}/100` : 'Nothing left to rank', {
+      label: 'Scores (0–100)',
+      language: 'text',
+      content: compareDetail(result),
+    })
 
     // 5. Explain
     begin('explain', 'Writing the recommendation…')
     await sleep(650, signal)
     emit({ type: 'result', result })
-    finish('explain', top ? `Picked ${top.product.name}` : 'Suggested next steps')
+    finish(
+      'explain',
+      top ? `Picked ${top.product.name}` : 'Suggested next steps',
+      top
+        ? { label: 'Template write-up from these facts', language: 'json', content: JSON.stringify(explainFacts(result), null, 2) }
+        : undefined,
+      top ? 'template' : undefined,
+    )
 
     emit({ type: 'mission_completed', durationMs: Math.round(performance.now() - started) })
   },

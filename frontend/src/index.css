@@ -2,7 +2,8 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* System code fonts (Consolas, SF Mono, Menlo) have clear zeros at small sizes. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Cascadia Mono', 'Liberation Mono', monospace;
 
   /* Ink: the deep navy used for text, the mission panel and primary buttons */
   --color-ink-950: #060a13;

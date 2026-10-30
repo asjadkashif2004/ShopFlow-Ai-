@@ -6,6 +6,7 @@ Event shapes match frontend/src/api/types.ts (MissionEvent).
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import secrets
 import time
@@ -15,7 +16,16 @@ from typing import Any, AsyncIterator
 from .agents import Agents
 from .config import Settings
 from .db import Store
-from .engine import build_result, fmt_budget, split_budget
+from .engine import (
+    budget_detail,
+    build_result,
+    compare_detail,
+    explain_facts,
+    fmt_budget,
+    intent_plan_text,
+    split_budget,
+    sql_preview,
+)
 
 log = logging.getLogger("shoppilot.missions")
 
@@ -47,7 +57,9 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
         timers[agent] = time.perf_counter()
         return {"type": "agent_started", "agent": agent, "message": message}
 
-    async def finish(agent: str, message: str, engine: str | None = None) -> dict[str, Any]:
+    async def finish(
+        agent: str, message: str, engine: str | None = None, detail: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         # Keep each step on screen long enough to follow, without hiding real latency.
         elapsed = time.perf_counter() - timers[agent]
         if elapsed < min_step:
@@ -57,6 +69,8 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
         event = {"type": "agent_completed", "agent": agent, "message": message, "durationMs": duration}
         if engine:
             event["engine"] = engine
+        if detail:
+            event["detail"] = detail
         return event
 
     try:
@@ -72,6 +86,11 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
             "intent",
             intent["summary"] if intent["category"] else "Couldn't tell which product type you want",
             _engine_name(intent_engine),
+            {
+                "label": "Validated intent from Groq" if intent_engine != "rules" else "Parsed with rules (Groq unavailable)",
+                "language": "json",
+                "content": intent_plan_text(intent),
+            },
         )
 
         category = next((c for c in store.categories if c["slug"] == intent["category"]), None)
@@ -98,6 +117,11 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
             "search",
             f"{in_category} {name} found · {len(matched)} have every must-have" if musts else f"{in_category} {name} found",
             "SQL" if store.kind == "postgres" else "memory",
+            {
+                "label": "Query run on Supabase Postgres" if store.kind == "postgres" else "Equivalent SQL (in-memory store until the database is connected)",
+                "language": "sql",
+                "content": sql_preview(category["slug"], musts),
+            },
         )
 
         # 3. Budget Agent
@@ -105,13 +129,21 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
         yield begin("budget", f"Checking prices against {fmt_budget(mp)}…" if mp is not None else "No budget given, keeping every match")
         within, over = split_budget(matched, intent)
         yield {"type": "stats", "stats": {"withinBudget": len(within)}}
-        yield await finish("budget", f"{len(within)} within budget · {len(over)} over" if mp is not None else f"{len(within)} options in range")
+        yield await finish(
+            "budget",
+            f"{len(within)} within budget · {len(over)} over" if mp is not None else f"{len(within)} options in range",
+            detail={"label": "Price check", "language": "text", "content": budget_detail(within, over, mp)},
+        )
 
         # 4. Comparison Agent: transparent scoring
         yield begin("compare", "Scoring value, rating, fit and specs…")
         result = build_result(mission_id, query, intent, category, store.categories, in_category, matched)
         top = result["recommendations"][0] if result["recommendations"] else None
-        yield await finish("compare", f"Ranked {len(within)} · top score {top['score']}/100" if top else "Nothing left to rank")
+        yield await finish(
+            "compare",
+            f"Ranked {len(within)} · top score {top['score']}/100" if top else "Nothing left to rank",
+            detail={"label": "Scores (0–100)", "language": "text", "content": compare_detail(result)},
+        )
 
         # 5. Explainer Agent
         yield begin("explain", "Writing the recommendation…")
@@ -122,6 +154,13 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
             "explain",
             f"Picked {top['product']['name']}" if top else "Suggested next steps",
             _engine_name(explain_engine) if top else None,
+            {
+                "label": "Facts the Explainer was allowed to use" if explain_engine != "template" else "Template write-up from these facts",
+                "language": "json",
+                "content": json.dumps(explain_facts(result), ensure_ascii=False, indent=2),
+            }
+            if top
+            else None,
         )
 
         duration = round((time.perf_counter() - started) * 1000)

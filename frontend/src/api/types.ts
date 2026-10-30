@@ -65,6 +65,13 @@ export interface Intent {
 
 export type AgentId = 'intent' | 'search' | 'budget' | 'compare' | 'explain'
 
+/** "Show your work" for one agent: the intent JSON, the SQL it ran, the scores… */
+export interface AgentDetail {
+  label: string
+  language: 'json' | 'sql' | 'text'
+  content: string
+}
+
 export interface MissionStats {
   analyzed: number
   inCategory: number
@@ -118,8 +125,8 @@ export interface MissionResult {
 export type MissionEvent =
   | { type: 'mission_started'; missionId: string; query: string; catalogSize: number }
   | { type: 'agent_started'; agent: AgentId; message: string }
-  /** engine: what did the work, e.g. "gpt-oss-120b", "SQL", "rules". */
-  | { type: 'agent_completed'; agent: AgentId; message: string; durationMs: number; engine?: string }
+  /** engine: what did the work, e.g. "gpt-oss-120b", "SQL", "rules". detail: the agent's work, shown on click. */
+  | { type: 'agent_completed'; agent: AgentId; message: string; durationMs: number; engine?: string; detail?: AgentDetail }
   | { type: 'intent'; intent: Intent }
   | { type: 'stats'; stats: Partial<MissionStats> }
   | { type: 'result'; result: MissionResult }

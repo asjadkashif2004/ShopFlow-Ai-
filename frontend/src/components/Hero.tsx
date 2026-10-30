@@ -14,6 +14,8 @@ const EXAMPLES = [
   { category: 'laptops', text: 'Lightweight laptop for students under $800' },
 ]
 
+const BUILT_WITH = ['Groq · gpt-oss-120b', 'Supabase Postgres', 'PayPal Server SDK by APIMatic', 'FastAPI', 'React + Framer Motion']
+
 export function Hero({ onSearch, catalogSize }: { onSearch: (q: string) => void; catalogSize: number }) {
   return (
     <motion.div
@@ -89,6 +91,18 @@ export function Hero({ onSearch, catalogSize }: { onSearch: (q: string) => void;
             })}
           </motion.div>
         </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">Built with</span>
+          {BUILT_WITH.map((t) => (
+            <span key={t} className="font-medium text-slate-500">
+              {t}
+            </span>
+          ))}
+        </motion.div>
       </section>
 
       <HowItWorks catalogSize={catalogSize} />
@@ -139,7 +153,7 @@ function HowItWorks({ catalogSize }: { catalogSize: number }) {
                 >
                   <s.Icon aria-hidden className="size-5" strokeWidth={1.75} />
                 </span>
-                <span className="font-mono text-xs text-slate-300">0{i + 1}</span>
+                <span className="text-xs font-semibold tabular-nums text-slate-300">0{i + 1}</span>
               </div>
               <h3 className="mt-4 text-[15px] font-semibold text-ink-900">{s.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{s.text}</p>

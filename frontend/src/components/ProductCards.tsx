@@ -98,7 +98,7 @@ export function TopPickCard({
             ))}
           </ul>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_12.5rem]">
+          <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_12.5rem] md:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_12.5rem]">
             <div>
               <h4 className="text-sm font-semibold text-ink-900">Why it's the pick</h4>
               <ul className="mt-2.5 space-y-2">
@@ -160,7 +160,7 @@ function ScoreBreakdownBars({ rec }: { rec: Recommendation }) {
           <div key={part.key} className="mt-3">
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">{part.label}</span>
-              <span className="font-mono font-medium text-slate-700">{v}</span>
+              <span className="font-semibold tabular-nums text-slate-700">{v}</span>
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200/70">
               <motion.div

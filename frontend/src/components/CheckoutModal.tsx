@@ -1,6 +1,6 @@
 import { PayPalButtons, PayPalScriptProvider, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import { Check, CircleCheck, Copy, LoaderCircle, Lock, ShieldCheck, TriangleAlert, X } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { ApiHandle } from '../api/client'
 import type { Intent, Order, Recommendation } from '../api/types'
@@ -394,14 +394,15 @@ function Receipt({ order, demo, onClose, onViewOrders }: { order: Order; demo: b
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: EASE }}
-      className="px-6 py-10 text-center sm:px-12 sm:py-12"
+      className="px-6 pb-10 pt-16 text-center sm:px-12 sm:pb-12 sm:pt-16"
     >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', bounce: 0.45, duration: 0.6 }}
-        className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50 ring-8 ring-emerald-50/60"
+        className="relative mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-50 ring-8 ring-emerald-50/60"
       >
+        <Burst />
         <svg viewBox="0 0 24 24" className="size-8 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.25, duration: 0.45, ease: 'easeOut' }} />
         </svg>
@@ -447,6 +448,46 @@ function Receipt({ order, demo, onClose, onViewOrders }: { order: Order; demo: b
         </button>
       </div>
     </motion.div>
+  )
+}
+
+const BURST_COLORS = ['bg-accent-400', 'bg-emerald-400', 'bg-amber-300', 'bg-sky-400', 'bg-rose-300']
+
+/** A short confetti burst behind the success check. */
+function Burst() {
+  const reduce = useReducedMotion()
+  const [pieces] = useState(() =>
+    Array.from({ length: 24 }, (_, i) => {
+      const angle = (i / 24) * Math.PI * 2 + Math.random() * 0.35
+      const dist = 62 + Math.random() * 74
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist - 12,
+        rotate: Math.random() * 540 - 270,
+        scale: 0.7 + Math.random() * 0.7,
+        color: BURST_COLORS[i % BURST_COLORS.length],
+        round: i % 3 === 0,
+        delay: 0.18 + Math.random() * 0.08,
+      }
+    }),
+  )
+  if (reduce) return null
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2">
+      {pieces.map((p, i) => (
+        <motion.span
+          key={i}
+          className={cn('absolute -ml-1 -mt-1 block', p.color, p.round ? 'size-2 rounded-full' : 'h-2.5 w-1.5 rounded-[2px]')}
+          initial={{ x: 0, y: 0, opacity: 0, scale: 0.3, rotate: 0 }}
+          animate={{ x: p.x, y: [0, p.y, p.y + 34], opacity: [1, 1, 0], scale: p.scale, rotate: p.rotate }}
+          transition={{
+            default: { duration: 1.3, delay: p.delay, ease: [0.16, 1, 0.3, 1] },
+            y: { duration: 1.4, delay: p.delay, times: [0, 0.55, 1], ease: 'easeOut' },
+            opacity: { duration: 1.4, delay: p.delay, times: [0, 0.7, 1] },
+          }}
+        />
+      ))}
+    </div>
   )
 }
 

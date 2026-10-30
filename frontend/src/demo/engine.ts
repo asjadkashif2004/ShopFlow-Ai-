@@ -418,7 +418,9 @@ function reasonsFor(p: Product, pool: Product[], intent: Intent, category: Categ
     if (!def || v === null) continue
     const vals = pool.map((x) => num(x.specs[key])).filter((x): x is number => x !== null)
     const best = direction === 'higher' ? Math.max(...vals) : Math.min(...vals)
-    if (vals.length > 1 && v === best) out.push(`${bestPhrase(def)} of your matches: ${formatSpec(def, v)}`)
+    const allSame = vals.every((x) => x === vals[0])
+    if (vals.length > 1 && allSame) out.push(`${def.label}: ${formatSpec(def, v)}, same as every match`)
+    else if (vals.length > 1 && v === best) out.push(`${bestPhrase(def)} of your matches: ${formatSpec(def, v)}`)
     else if (vals.length > 1) {
       const avg = vals.reduce((a, b) => a + b, 0) / vals.length
       out.push(`${def.label}: ${formatSpec(def, v)} (group average ${formatSpec(def, roundSmart(avg))})`)
