@@ -311,7 +311,238 @@ class PostgresStore(Store):
 
 
 # --------------------------------------------------------------------------- #
-# In-memory stand-in (until the database URL is set)
+# Supabase through its REST API (publishable / anon / secret key)
+# --------------------------------------------------------------------------- #
+
+
+class SupabaseSetupNeeded(Exception):
+    """The ShopPilot tables are missing: run supabase/shoppilot_setup.sql in the SQL Editor."""
+
+
+class SupabaseError(Exception):
+    def __init__(self, status: int, body: str):
+        super().__init__(f"Supabase API error {status}: {body[:300]}")
+        self.status = status
+        self.body = body
+
+
+REST_PRODUCT_COLS = "id,category,name,brand,price,rating,review_count,stock,description,specs,tags"
+REST_ORDER_SELECT = "*,products(name,brand,category)"
+
+
+def _rest_order(row: dict[str, Any]) -> dict[str, Any]:
+    p = row.get("products") or {}
+    return {
+        "id": row["id"],
+        "paypalOrderId": row["paypal_order_id"],
+        "captureId": row.get("capture_id"),
+        "productId": row["product_id"],
+        "productName": p.get("name", row["product_id"]),
+        "brand": p.get("brand", ""),
+        "category": p.get("category", ""),
+        "amount": float(row["amount"]),
+        "currency": row["currency"],
+        "status": row["status"],
+        "missionId": row.get("mission_id"),
+        "paymentMode": row.get("payment_mode"),
+        "createdAt": row["created_at"],
+    }
+
+
+class SupabaseRestStore(Store):
+    """Uses Supabase's auto-generated REST API (PostgREST). Filters run in Postgres."""
+
+    kind = "supabase"
+
+    def __init__(self, url: str, key: str):
+        import httpx
+
+        headers = {"apikey": key, "Content-Type": "application/json"}
+        if key.startswith("eyJ"):  # legacy anon/service keys are JWTs and also go in Authorization
+            headers["Authorization"] = f"Bearer {key}"
+        self.http = httpx.AsyncClient(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=15)
+        self._count = 0
+
+    async def _req(self, method: str, path: str, *, params: Any = None, json_body: Any = None, prefer: str | None = None) -> Any:
+        headers = {"Prefer": prefer} if prefer else None
+        r = await self.http.request(method, path, params=params, json=json_body, headers=headers)
+        if r.status_code >= 400:
+            raise SupabaseError(r.status_code, r.text)
+        return r.json() if r.content else None
+
+    async def init(self) -> None:
+        try:
+            rows = await self._req("GET", "/categories", params={"select": "slug,name,singular,key_specs,specs", "order": "sort_order"})
+        except SupabaseError as e:
+            if e.status == 404 or "PGRST205" in e.body or "42P01" in e.body:
+                raise SupabaseSetupNeeded("ShopPilot tables not found") from e
+            raise
+        if not rows:
+            raise SupabaseSetupNeeded("No categories found (the seed has not run, or read access is blocked)")
+        self.categories = [
+            {"slug": r["slug"], "name": r["name"], "singular": r["singular"], "keySpecs": r["key_specs"] or [], "specs": r["specs"]}
+            for r in rows
+        ]
+        self._count = len(await self._req("GET", "/products", params={"select": "id"}))
+        log.info("Connected to Supabase (REST API): %d categories, %d products", len(self.categories), self._count)
+
+    async def close(self) -> None:
+        await self.http.aclose()
+
+    @staticmethod
+    def _product(row: dict[str, Any]) -> Product:
+        return {
+            "id": row["id"],
+            "category": row["category"],
+            "name": row["name"],
+            "brand": row["brand"],
+            "price": float(row["price"]),
+            "rating": float(row["rating"]),
+            "reviewCount": row["review_count"],
+            "stock": row["stock"],
+            "description": row["description"],
+            "specs": row["specs"] or {},
+            "tags": row["tags"] or [],
+        }
+
+    async def all_products(self) -> list[Product]:
+        rows = await self._req("GET", "/products", params={"select": REST_PRODUCT_COLS, "order": "category.asc,price.asc"})
+        return [self._product(r) for r in rows]
+
+    async def product_count(self) -> int:
+        return self._count
+
+    async def count_in_category(self, slug: str) -> int:
+        return len(await self._req("GET", "/products", params={"select": "id", "category": f"eq.{slug}"}))
+
+    @staticmethod
+    def search_params(slug: str, musts: list[Req]) -> list[tuple[str, str]]:
+        params = [("select", REST_PRODUCT_COLS), ("category", f"eq.{slug}"), ("order", "price.asc")]
+        equals = {r["spec"]: r["equals"] for r in musts if "equals" in r and not r.get("tag")}
+        if equals:  # one JSONB containment check covers every equality must-have
+            params.append(("specs", "cs." + json.dumps(equals, ensure_ascii=False, separators=(",", ":"))))
+        tags = [r["tag"] for r in musts if r.get("tag")]
+        if tags:
+            params.append(("tags", "cs.{" + ",".join(tags) + "}"))
+        for r in musts:
+            if "min" in r and not r.get("tag"):
+                params.append((f"specs->{r['spec']}", f"gte.{float(r['min']):g}"))
+        return params
+
+    def search_preview(self, slug: str, musts: list[Req]) -> str:
+        from urllib.parse import urlencode
+
+        return "GET /rest/v1/products?" + urlencode(self.search_params(slug, musts), safe="{}:,>.-\"*")
+
+    async def search(self, slug: str, musts: list[Req]) -> list[Product]:
+        rows = await self._req("GET", "/products", params=self.search_params(slug, musts))
+        return [self._product(r) for r in rows]
+
+    async def get_product(self, product_id: str) -> Product | None:
+        rows = await self._req("GET", "/products", params={"select": REST_PRODUCT_COLS, "id": f"eq.{product_id}"})
+        return self._product(rows[0]) if rows else None
+
+    async def mission_started(self, mission_id: str, query: str) -> None:
+        try:
+            await self._req("POST", "/missions", json_body={"id": mission_id, "query": query}, prefer="return=minimal")
+        except Exception:
+            log.exception("Could not save mission start")
+
+    async def mission_finished(self, mission_id: str, **d: Any) -> None:
+        try:
+            await self._req(
+                "PATCH",
+                "/missions",
+                params={"id": f"eq.{mission_id}"},
+                json_body={
+                    "status": d.get("status", "done"),
+                    "intent": d.get("intent"),
+                    "result": d.get("result"),
+                    "intent_engine": d.get("intent_engine"),
+                    "explain_engine": d.get("explain_engine"),
+                    "duration_ms": d.get("duration_ms"),
+                },
+                prefer="return=minimal",
+            )
+            steps = d.get("steps") or []
+            if steps:
+                await self._req(
+                    "POST",
+                    "/mission_steps",
+                    json_body=[{"mission_id": mission_id, "agent": s["agent"], "message": s["message"], "duration_ms": s["durationMs"]} for s in steps],
+                    prefer="return=minimal",
+                )
+            result = d.get("result") or {}
+            recs = [*(result.get("recommendations") or []), *(result.get("nearMisses") or [])]
+            if recs:
+                await self._req(
+                    "POST",
+                    "/recommendations",
+                    json_body=[
+                        {
+                            "mission_id": mission_id,
+                            "product_id": r["product"]["id"],
+                            "rank": r["rank"],
+                            "score": r["score"],
+                            "breakdown": r["breakdown"],
+                            "reasons": r["reasons"],
+                            "tradeoffs": r["tradeoffs"],
+                            "over_budget": r["overBudget"],
+                        }
+                        for r in recs
+                    ],
+                    prefer="return=minimal",
+                )
+        except Exception:
+            log.exception("Could not save mission result")
+
+    async def create_order(self, o: dict[str, Any]) -> None:
+        mission_id = o.get("mission_id")
+        if mission_id:
+            found = await self._req("GET", "/missions", params={"select": "id", "id": f"eq.{mission_id}"})
+            mission_id = mission_id if found else None
+        await self._req(
+            "POST",
+            "/orders",
+            json_body={
+                "id": o["id"],
+                "paypal_order_id": o["paypal_order_id"],
+                "product_id": o["product_id"],
+                "mission_id": mission_id,
+                "amount": round(float(o["amount"]), 2),
+                "currency": o["currency"],
+                "status": "CREATED",
+                "payment_mode": o["payment_mode"],
+            },
+            prefer="return=minimal",
+        )
+
+    async def get_order(self, paypal_order_id: str) -> dict[str, Any] | None:
+        rows = await self._req("GET", "/orders", params={"select": REST_ORDER_SELECT, "paypal_order_id": f"eq.{paypal_order_id}"})
+        return _rest_order(rows[0]) if rows else None
+
+    async def update_order(self, paypal_order_id: str, *, status: str, capture_id: str | None, paypal_response: Any):
+        rows = await self._req(
+            "PATCH",
+            "/orders",
+            params={"paypal_order_id": f"eq.{paypal_order_id}", "select": "product_id"},
+            json_body={"status": status, "capture_id": capture_id, "paypal_response": paypal_response, "updated_at": _now_iso()},
+            prefer="return=representation",
+        )
+        if rows and status == "COMPLETED":
+            try:
+                await self._req("POST", "/rpc/decrement_stock", json_body={"p_product_id": rows[0]["product_id"]})
+            except Exception:
+                log.warning("Could not update stock", exc_info=True)
+        return await self.get_order(paypal_order_id)
+
+    async def list_orders(self, limit: int = 50) -> list[dict[str, Any]]:
+        rows = await self._req("GET", "/orders", params={"select": REST_ORDER_SELECT, "order": "created_at.desc", "limit": str(limit)})
+        return [_rest_order(r) for r in rows]
+
+
+# --------------------------------------------------------------------------- #
+# In-memory stand-in (until Supabase is set up)
 # --------------------------------------------------------------------------- #
 
 

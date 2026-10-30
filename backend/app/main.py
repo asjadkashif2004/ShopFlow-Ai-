@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 
 from .agents import Agents
 from .config import load_settings
-from .db import MemoryStore, PostgresStore, Store, load_catalog
+from .db import MemoryStore, PostgresStore, Store, SupabaseRestStore, SupabaseSetupNeeded, load_catalog
 from .engine import CatalogIndex
 from .missions import Context, run_mission
 from .paypal import PayPalError, PayPalService
@@ -35,19 +35,37 @@ settings = load_settings()
 async def lifespan(app: FastAPI):
     catalog = load_catalog(settings.catalog_path)
     store: Store = MemoryStore(catalog)
+    note: str | None = None
     if settings.supabase_db_url:
         pg = PostgresStore(settings.supabase_db_url, catalog)
         try:
             await pg.init()
             store = pg
         except Exception as e:
-            log.error("Could not connect to Supabase (%s). Using the in-memory store for now.", type(e).__name__)
-            log.debug("Supabase connection error", exc_info=True)
+            note = f"Could not connect to the Supabase database ({type(e).__name__}). Check SUPABASE_DB_URL."
+            log.error(note)
+    elif settings.supabase_url and settings.supabase_key:
+        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
+        try:
+            await rest.init()
+            store = rest
+        except SupabaseSetupNeeded:
+            note = "Supabase is connected but the ShopPilot tables are missing. Run supabase/shoppilot_setup.sql in the Supabase SQL Editor, then restart."
+            log.error(note)
+            await rest.close()
+        except Exception as e:
+            note = f"Could not reach Supabase ({e}). Check SUPABASE_URL and the API key."
+            log.error(note)
+            await rest.close()
     else:
-        log.warning("SUPABASE_DB_URL is not set. Using the in-memory store (data resets on restart).")
+        note = "No Supabase settings found, so data is kept in memory and resets on restart."
+        log.warning(note)
+    if store.kind == "memory":
+        log.warning("Using the in-memory store for now.")
 
     index = CatalogIndex(store.categories, await store.all_products())
     app.state.ctx = Context(settings=settings, store=store, agents=Agents(settings, index), paypal=PayPalService(settings))
+    app.state.db_note = note
     log.info("ShopPilot ready · database=%s · ai=%s · payments=%s", store.kind, app.state.ctx.agents.label, app.state.ctx.paypal.mode)
     yield
     await store.close()
@@ -72,7 +90,7 @@ class OrderBody(BaseModel):
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     c = ctx()
-    return {"ok": True, "database": c.store.kind, "ai": c.agents.label, "payments": c.paypal.mode}
+    return {"ok": True, "database": c.store.kind, "databaseNote": app.state.db_note, "ai": c.agents.label, "payments": c.paypal.mode}
 
 
 @app.get("/api/config")
@@ -84,6 +102,7 @@ async def config() -> dict[str, Any]:
         "currency": "USD",
         "catalogSize": await c.store.product_count(),
         "database": c.store.kind,
+        "databaseNote": app.state.db_note,
         "ai": c.agents.label,
     }
 

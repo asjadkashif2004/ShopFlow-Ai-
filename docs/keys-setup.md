@@ -29,10 +29,19 @@ The `key/` folder is git-ignored, so nothing in it is ever committed.
 
 The client ID is safe to show in the browser. The secret must only ever live on the server.
 
-## 2. Supabase database connection string (about 2 minutes)
+## 2. Supabase
 
-The anon and publishable keys are for public browser access. The backend needs the database
-connection string so it can create the tables, load the 60 products and store orders safely.
+**Option A, used now (project URL + publishable key):** run [supabase/shoppilot_setup.sql](../supabase/shoppilot_setup.sql)
+once in **SQL Editor → New query → Run**, then restart the backend. The backend talks to Supabase through
+its REST API, and Row Level Security only allows what the app needs.
+
+**Option B (stricter):** add the database connection string below, or the Supabase **secret** key
+(`supabase secret key : sb_secret_…`), and the backend no longer depends on the public write rules.
+
+### Database connection string (about 2 minutes)
+
+The anon and publishable keys are for public browser access. With the connection string, the backend
+creates the tables and loads the 60 products itself.
 
 1. Open your project at <https://supabase.com/dashboard>.
 2. Click **Connect** at the top of the page.

@@ -64,18 +64,18 @@ def _guess_name(label: str, value: str) -> str | None:
         return "SUPABASE_DB_URL"
     if v.startswith("gsk_") or "groq" in l:
         return "GROQ_API_KEY"
-    if "paypal" in l or "pay pal" in l:
-        if "secret" in l:
-            return "PAYPAL_CLIENT_SECRET"
-        return "PAYPAL_CLIENT_ID"
     if v.startswith("sb_publishable_"):
         return "SUPABASE_PUBLISHABLE_KEY"
     if v.startswith("sb_secret_") or "service" in l:
         return "SUPABASE_SECRET_KEY"
     if v.startswith("https://") and "supabase" in v:
         return "SUPABASE_URL"
-    if "anon" in l:
+    if "anon" in l and "supabase" in l or v.startswith("eyJ"):
         return "SUPABASE_ANON_KEY"
+    if "paypal" in l or "pay pal" in l:
+        if "secret" in l:
+            return "PAYPAL_CLIENT_SECRET"
+        return "PAYPAL_CLIENT_ID"
     if any(w in l for w in ("db url", "database", "connection", "pooler")):
         return "SUPABASE_DB_URL"
     if "client id" in l or l.strip() == "client":
@@ -87,6 +87,7 @@ def _guess_name(label: str, value: str) -> str | None:
 
 def _read_notes_file(path: Path) -> dict[str, str]:
     out: dict[str, str] = {}
+    section = ""  # a heading line like "Paypal keys:" applies to the lines below it
     for raw in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
@@ -101,9 +102,12 @@ def _read_notes_file(path: Path) -> dict[str, str]:
         else:
             label, value = "", line
         value = _strip_quotes(value)
-        if not value or " " in value:
+        if not value:
+            section = label.strip().lower()
             continue
-        name = _guess_name(label, value)
+        if " " in value:
+            continue
+        name = _guess_name(f"{section} {label}", value)
         if name:
             out.setdefault(name, value)
     return out
@@ -114,6 +118,9 @@ class Settings:
     groq_api_key: str | None
     groq_model: str
     supabase_db_url: str | None
+    supabase_url: str | None
+    supabase_key: str | None  # best available API key: secret > publishable > anon
+    supabase_key_kind: str | None
     paypal_client_id: str | None
     paypal_client_secret: str | None
     paypal_env: str
@@ -155,10 +162,14 @@ def load_settings() -> Settings:
         log.warning("SUPABASE_DB_URL still contains [YOUR-PASSWORD]; replace it with your database password.")
         db_url = None
 
+    key_kind = next((k for k in ("SECRET", "PUBLISHABLE", "ANON") if values.get(f"SUPABASE_{k}_KEY")), None)
     settings = Settings(
         groq_api_key=values.get("GROQ_API_KEY"),
         groq_model=values.get("GROQ_MODEL", "openai/gpt-oss-120b"),
         supabase_db_url=db_url,
+        supabase_url=values.get("SUPABASE_URL"),
+        supabase_key=values.get(f"SUPABASE_{key_kind}_KEY") if key_kind else None,
+        supabase_key_kind=key_kind.lower() if key_kind else None,
         paypal_client_id=values.get("PAYPAL_CLIENT_ID"),
         paypal_client_secret=values.get("PAYPAL_CLIENT_SECRET"),
         paypal_env=values.get("PAYPAL_ENV", "sandbox").lower(),

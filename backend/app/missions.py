@@ -104,7 +104,7 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
             return
 
         # 2. Search Agent: real SQL against Supabase
-        source = "Supabase" if store.kind == "postgres" else "the catalog"
+        source = "Supabase" if store.kind in ("postgres", "supabase") else "the catalog"
         yield begin("search", f"Querying {total} products in {source}…")
         yield {"type": "stats", "stats": {"analyzed": total}}
         in_category = await store.count_in_category(category["slug"])
@@ -116,11 +116,15 @@ async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]
         yield await finish(
             "search",
             f"{in_category} {name} found · {len(matched)} have every must-have" if musts else f"{in_category} {name} found",
-            "SQL" if store.kind == "postgres" else "memory",
+            {"postgres": "SQL", "supabase": "Supabase"}.get(store.kind, "memory"),
             {
-                "label": "Query run on Supabase Postgres" if store.kind == "postgres" else "Equivalent SQL (in-memory store until the database is connected)",
+                "label": {
+                    "postgres": "Query run on Supabase Postgres",
+                    "supabase": "Query run in Supabase (sent through its REST API)",
+                }.get(store.kind, "Equivalent SQL (in-memory store until Supabase is set up)"),
                 "language": "sql",
-                "content": sql_preview(category["slug"], musts),
+                "content": sql_preview(category["slug"], musts)
+                + (f"\n\n-- sent as\n-- {store.search_preview(category['slug'], musts)}" if hasattr(store, "search_preview") else ""),
             },
         )
 

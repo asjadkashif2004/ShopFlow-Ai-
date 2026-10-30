@@ -19,7 +19,10 @@ The price always comes from the database, never from the browser, and capture is
 ## Run locally (Windows)
 
 1. Put your keys in `key/All keys.txt` (the folder is git-ignored). See [docs/keys-setup.md](docs/keys-setup.md).
-2. Backend (port 7860):
+2. Supabase, once: open **SQL Editor → New query**, paste all of [supabase/shoppilot_setup.sql](supabase/shoppilot_setup.sql)
+   and click **Run**. It creates the tables with Row Level Security, the access rules for the publishable key,
+   and the 60-product seed. Regenerate it with `backend/.venv/Scripts/python backend/scripts/build_supabase_sql.py`.
+3. Backend (port 7860):
 
    ```bash
    python -m venv backend/.venv
@@ -27,7 +30,7 @@ The price always comes from the database, never from the browser, and capture is
    backend/.venv/Scripts/python -m uvicorn app.main:app --app-dir backend --port 7860 --reload
    ```
 
-3. Frontend (port 5173, proxies `/api` to the backend):
+4. Frontend (port 5173, proxies `/api` to the backend):
 
    ```bash
    npm --prefix frontend install

@@ -7,7 +7,8 @@ import { ProductVisual } from './ui'
 
 function subtitle(config: AppConfig | null) {
   if (!config || config.mode === 'demo') return 'Simulated orders, saved in this browser.'
-  const where = config.database === 'postgres' ? 'Saved in Supabase.' : 'Saved on the server until it restarts.'
+  const where =
+    config.database === 'postgres' || config.database === 'supabase' ? 'Saved in Supabase.' : 'Saved on the server until it restarts.'
   return config.paypalMode === 'sandbox'
     ? `${where} Payments are captured through PayPal Sandbox, so no real money moves.`
     : `${where} Payments are simulated until PayPal Sandbox keys are added.`

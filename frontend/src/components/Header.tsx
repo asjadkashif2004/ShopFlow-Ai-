@@ -21,7 +21,7 @@ export function Logo() {
   )
 }
 
-const DB_LABEL = { postgres: 'Supabase', memory: 'in-memory', browser: 'browser' } as const
+const DB_LABEL = { postgres: 'Supabase', supabase: 'Supabase', memory: 'in-memory', browser: 'browser' } as const
 
 function ModeBadge({ config }: { config: AppConfig | null }) {
   if (!config) return null
@@ -29,7 +29,8 @@ function ModeBadge({ config }: { config: AppConfig | null }) {
   const sandbox = config.paypalMode === 'sandbox'
   const ai = config.ai.startsWith('groq:') ? `Groq ${config.ai.split('/').pop()}` : 'rules'
   const title = live
-    ? `Live backend · AI: ${ai} · Database: ${DB_LABEL[config.database]} · Payments: ${sandbox ? 'PayPal Sandbox' : 'simulated until PayPal keys are added'}`
+    ? `Live backend · AI: ${ai} · Database: ${DB_LABEL[config.database]} · Payments: ${sandbox ? 'PayPal Sandbox' : 'simulated until PayPal keys are added'}` +
+      (config.databaseNote ? `\n${config.databaseNote}` : '')
     : 'Demo mode: the agents and checkout are simulated in your browser.'
   return (
     <span

@@ -159,7 +159,9 @@ export interface AppConfig {
   paypalClientId: string | null
   currency: string
   catalogSize: number
-  database: 'postgres' | 'memory' | 'browser'
+  database: 'postgres' | 'supabase' | 'memory' | 'browser'
+  /** Set when the database isn't fully set up, e.g. "run supabase/shoppilot_setup.sql". */
+  databaseNote?: string | null
   /** e.g. "groq:openai/gpt-oss-120b" or "rules" */
   ai: string
 }
