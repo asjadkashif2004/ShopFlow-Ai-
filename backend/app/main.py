@@ -7,9 +7,11 @@ the built React app (frontend/dist) so one container is enough on Hugging Face.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import secrets
+import time
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -29,6 +31,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("shoppilot")
 
 settings = load_settings()
+
+SETUP_NOTE = (
+    "Supabase is connected but the ShopPilot tables are missing. "
+    "Run supabase/shoppilot_setup.sql in the Supabase SQL Editor, then refresh the page."
+)
+RETRY_SECONDS = 10
 
 
 @asynccontextmanager
@@ -50,7 +58,7 @@ async def lifespan(app: FastAPI):
             await rest.init()
             store = rest
         except SupabaseSetupNeeded:
-            note = "Supabase is connected but the ShopPilot tables are missing. Run supabase/shoppilot_setup.sql in the Supabase SQL Editor, then restart."
+            note = SETUP_NOTE
             log.error(note)
             await rest.close()
         except Exception as e:
@@ -66,6 +74,11 @@ async def lifespan(app: FastAPI):
     index = CatalogIndex(store.categories, await store.all_products())
     app.state.ctx = Context(settings=settings, store=store, agents=Agents(settings, index), paypal=PayPalService(settings))
     app.state.db_note = note
+    # If only the tables are missing, keep checking so running the SQL needs no restart.
+    app.state.retry_supabase = note == SETUP_NOTE
+    app.state.last_retry = time.monotonic()
+    app.state.retry_lock = asyncio.Lock()
+    app.state.previous_store = None
     log.info("ShopPilot ready · database=%s · ai=%s · payments=%s", store.kind, app.state.ctx.agents.label, app.state.ctx.paypal.mode)
     yield
     await store.close()
@@ -76,6 +89,39 @@ app = FastAPI(title="ShopPilot API", version="0.1.0", lifespan=lifespan)
 
 def ctx() -> Context:
     return app.state.ctx
+
+
+async def maybe_connect_supabase() -> None:
+    """Switch from the in-memory store to Supabase as soon as the setup SQL has been run."""
+    if not app.state.retry_supabase or time.monotonic() - app.state.last_retry < RETRY_SECONDS:
+        return
+    async with app.state.retry_lock:
+        if not app.state.retry_supabase or time.monotonic() - app.state.last_retry < RETRY_SECONDS:
+            return
+        app.state.last_retry = time.monotonic()
+        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
+        try:
+            await rest.init()
+        except Exception:
+            await rest.close()
+            return
+        app.state.previous_store = ctx().store
+        ctx().store = rest
+        app.state.db_note = None
+        app.state.retry_supabase = False
+        log.info("Supabase tables found. Switched from the in-memory store to Supabase.")
+
+
+async def store_for_order(paypal_order_id: str) -> tuple[Store, dict[str, Any] | None]:
+    """Orders started just before the switch to Supabase still live in the old in-memory store."""
+    store = ctx().store
+    order = await store.get_order(paypal_order_id)
+    prev: Store | None = app.state.previous_store
+    if order is None and prev is not None:
+        prev_order = await prev.get_order(paypal_order_id)
+        if prev_order:
+            return prev, prev_order
+    return store, order
 
 
 class MissionBody(BaseModel):
@@ -95,6 +141,7 @@ async def health() -> dict[str, Any]:
 
 @app.get("/api/config")
 async def config() -> dict[str, Any]:
+    await maybe_connect_supabase()
     c = ctx()
     return {
         "paypalClientId": c.paypal.client_id if c.paypal.mode == "sandbox" else None,
@@ -112,6 +159,7 @@ async def missions(body: MissionBody) -> StreamingResponse:
     query = " ".join(body.query.split())
     if not query:
         raise HTTPException(422, "Tell ShopPilot what you're looking for.")
+    await maybe_connect_supabase()
 
     async def stream():
         async for event in run_mission(query, ctx()):
@@ -155,7 +203,7 @@ async def create_order(body: OrderBody) -> dict[str, str]:
 @app.post("/api/orders/{paypal_order_id}/capture")
 async def capture_order(paypal_order_id: str) -> dict[str, Any]:
     c = ctx()
-    order = await c.store.get_order(paypal_order_id)
+    store, order = await store_for_order(paypal_order_id)
     if not order:
         raise HTTPException(404, "Order not found. Please start checkout again.")
     if order["status"] == "COMPLETED":
@@ -169,7 +217,7 @@ async def capture_order(paypal_order_id: str) -> dict[str, Any]:
     status = "COMPLETED" if capture["status"] == "COMPLETED" and amount_ok else "FAILED"
     if not amount_ok:
         log.error("Captured amount %s does not match order amount %s for %s", capture["amount"], order["amount"], paypal_order_id)
-    updated = await c.store.update_order(
+    updated = await store.update_order(
         paypal_order_id, status=status, capture_id=capture["captureId"], paypal_response=capture["raw"]
     )
     if status != "COMPLETED":
@@ -179,7 +227,13 @@ async def capture_order(paypal_order_id: str) -> dict[str, Any]:
 
 @app.get("/api/orders")
 async def list_orders() -> list[dict[str, Any]]:
-    return await ctx().store.list_orders()
+    orders = await ctx().store.list_orders()
+    prev: Store | None = app.state.previous_store
+    if prev is not None:  # include orders paid just before the switch to Supabase
+        seen = {o["paypalOrderId"] for o in orders}
+        orders += [o for o in await prev.list_orders() if o["paypalOrderId"] not in seen]
+        orders.sort(key=lambda o: o["createdAt"], reverse=True)
+    return orders
 
 
 # Serve the built React app (after the API routes so /api/* wins).

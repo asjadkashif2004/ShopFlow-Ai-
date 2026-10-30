@@ -44,7 +44,7 @@ def _engine_name(engine: str) -> str:
 
 
 async def run_mission(query: str, ctx: Context) -> AsyncIterator[dict[str, Any]]:
-    store, agents = ctx.store, ctx.agents
+    store, agents = ctx.store, ctx.agents  # read once, so a mid-mission switch to Supabase can't split a mission
     min_step = ctx.settings.step_min_ms / 1000
     started = time.perf_counter()
     mission_id = f"msn_{secrets.token_hex(6)}"
