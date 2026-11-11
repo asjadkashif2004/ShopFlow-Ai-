@@ -103,7 +103,15 @@ def ctx() -> Context:
 def supabase_error_note(e: Exception) -> str:
     if "getaddrinfo" in str(e) or "Name or service not known" in str(e):
         return PAUSED_NOTE
-    return f"Could not reach Supabase ({e}). Check SUPABASE_URL and the API key."
+    status = getattr(e, "status", None)
+    if isinstance(status, int) and status >= 500:
+        return (
+            f"Supabase is starting up or temporarily down (HTTP {status}). A restored project takes a few "
+            "minutes to boot; ShopPilot reconnects by itself."
+        )
+    if isinstance(status, int) and status in (401, 403):
+        return f"Supabase rejected the API key (HTTP {status}). Check the publishable or anon key in the key folder."
+    return f"Could not reach Supabase ({type(e).__name__}). Check SUPABASE_URL and the API key."
 
 
 async def _connect_supabase() -> None:

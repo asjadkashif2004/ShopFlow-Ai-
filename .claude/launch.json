@@ -10,7 +10,7 @@
     {
       "name": "backend",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--app-dir", "backend", "--port", "7860", "--reload", "--reload-dir", "backend/app"],
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--app-dir", "backend", "--port", "7860", "--reload", "--reload-dir", "backend/app", "--timeout-graceful-shutdown", "2"],
       "port": 7860
     }
   ]
