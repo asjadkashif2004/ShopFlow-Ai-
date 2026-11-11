@@ -36,6 +36,10 @@ SETUP_NOTE = (
     "Supabase is connected but the ShopPilot tables are missing. "
     "Run supabase/shoppilot_setup.sql in the Supabase SQL Editor, then refresh the page."
 )
+PAUSED_NOTE = (
+    "Supabase can't be reached: the project's address doesn't exist right now, which usually means "
+    "the free project is paused. Click Restore project in the Supabase dashboard; ShopPilot reconnects by itself."
+)
 RETRY_SECONDS = 10
 
 
@@ -52,20 +56,24 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             note = f"Could not connect to the Supabase database ({type(e).__name__}). Check SUPABASE_DB_URL."
             log.error(note)
-    elif settings.supabase_url and settings.supabase_key:
+    if store.kind == "memory" and settings.supabase_url and settings.supabase_key:
+        # REST API: used when there is no DB URL, or when the DB URL didn't connect.
         rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
         try:
             await rest.init()
             store = rest
+            if note:
+                log.info("Using the Supabase REST API instead of the database URL.")
+                note = None
         except SupabaseSetupNeeded:
             note = SETUP_NOTE
             log.error(note)
             await rest.close()
         except Exception as e:
-            note = f"Could not reach Supabase ({e}). Check SUPABASE_URL and the API key."
+            note = supabase_error_note(e)
             log.error(note)
             await rest.close()
-    else:
+    elif store.kind == "memory" and not note:
         note = "No Supabase settings found, so data is kept in memory and resets on restart."
         log.warning(note)
     if store.kind == "memory":
@@ -74,8 +82,9 @@ async def lifespan(app: FastAPI):
     index = CatalogIndex(store.categories, await store.all_products())
     app.state.ctx = Context(settings=settings, store=store, agents=Agents(settings, index), paypal=PayPalService(settings))
     app.state.db_note = note
-    # If only the tables are missing, keep checking so running the SQL needs no restart.
-    app.state.retry_supabase = note == SETUP_NOTE
+    # While on the in-memory store, keep trying Supabase (tables not created yet, or the
+    # free project is paused) so fixing it on the Supabase side needs no restart.
+    app.state.retry_supabase = store.kind == "memory" and bool(settings.supabase_url and settings.supabase_key)
     app.state.last_retry = time.monotonic()
     app.state.retry_lock = asyncio.Lock()
     app.state.previous_store = None
@@ -91,25 +100,44 @@ def ctx() -> Context:
     return app.state.ctx
 
 
-async def maybe_connect_supabase() -> None:
-    """Switch from the in-memory store to Supabase as soon as the setup SQL has been run."""
-    if not app.state.retry_supabase or time.monotonic() - app.state.last_retry < RETRY_SECONDS:
-        return
+def supabase_error_note(e: Exception) -> str:
+    if "getaddrinfo" in str(e) or "Name or service not known" in str(e):
+        return PAUSED_NOTE
+    return f"Could not reach Supabase ({e}). Check SUPABASE_URL and the API key."
+
+
+async def _connect_supabase() -> None:
     async with app.state.retry_lock:
-        if not app.state.retry_supabase or time.monotonic() - app.state.last_retry < RETRY_SECONDS:
-            return
-        app.state.last_retry = time.monotonic()
         rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
         try:
             await rest.init()
-        except Exception:
+        except SupabaseSetupNeeded:
+            app.state.db_note = SETUP_NOTE
+            await rest.close()
+            return
+        except Exception as e:
+            app.state.db_note = supabase_error_note(e)
             await rest.close()
             return
         app.state.previous_store = ctx().store
         ctx().store = rest
         app.state.db_note = None
         app.state.retry_supabase = False
-        log.info("Supabase tables found. Switched from the in-memory store to Supabase.")
+        log.info("Connected to Supabase. Switched from the in-memory store to Supabase.")
+
+
+async def maybe_connect_supabase() -> None:
+    """While on the in-memory store, retry Supabase every few seconds without holding up requests."""
+    if (
+        not app.state.retry_supabase
+        or app.state.retry_lock.locked()
+        or time.monotonic() - app.state.last_retry < RETRY_SECONDS
+    ):
+        return
+    app.state.last_retry = time.monotonic()
+    app.state.retry_task = asyncio.create_task(_connect_supabase())
+    # Wait briefly so a page refresh right after a fix already shows Supabase.
+    await asyncio.wait({app.state.retry_task}, timeout=1.5)
 
 
 async def store_for_order(paypal_order_id: str) -> tuple[Store, dict[str, Any] | None]:

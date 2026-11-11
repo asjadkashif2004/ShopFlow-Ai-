@@ -161,6 +161,12 @@ def load_settings() -> Settings:
     if db_url and "[YOUR-PASSWORD]" in db_url:
         log.warning("SUPABASE_DB_URL still contains [YOUR-PASSWORD]; replace it with your database password.")
         db_url = None
+    elif db_url and not db_url.strip().startswith(("postgres://", "postgresql://")):
+        log.warning(
+            "SUPABASE_DB_URL is not a Postgres connection string (it should start with postgresql://). "
+            "Ignoring it and using the Supabase REST API instead."
+        )
+        db_url = None
 
     key_kind = next((k for k in ("SECRET", "PUBLISHABLE", "ANON") if values.get(f"SUPABASE_{k}_KEY")), None)
     settings = Settings(
