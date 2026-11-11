@@ -31,6 +31,14 @@ export interface Product {
   description: string
   specs: Record<string, SpecValue>
   tags: string[]
+  image?: ProductImage | null
+}
+
+/** Product photo (Unsplash) with the photographer credit. */
+export interface ProductImage {
+  url: string
+  credit?: string
+  creditUrl?: string
 }
 
 export interface Catalog {
@@ -149,6 +157,7 @@ export interface Order {
   missionId: string | null
   paymentMode?: 'sandbox' | 'simulated'
   createdAt: string
+  image?: ProductImage | null
 }
 
 export interface AppConfig {

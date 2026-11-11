@@ -29,6 +29,12 @@ create index if not exists products_category_price_idx on products (category, pr
 create index if not exists products_specs_idx on products using gin (specs);
 create index if not exists products_tags_idx on products using gin (tags);
 
+-- Product photo + photographer credit (Unsplash). Added after launch, so it's an
+-- alter that is also safe on databases created before photos existed.
+alter table products add column if not exists image_url text;
+alter table products add column if not exists image_credit text;
+alter table products add column if not exists image_credit_url text;
+
 -- One row per shopping request, with what the AI understood and what it recommended.
 create table if not exists missions (
   id           text primary key,

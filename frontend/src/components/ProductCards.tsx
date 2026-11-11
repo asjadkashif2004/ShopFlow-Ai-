@@ -52,9 +52,16 @@ export function TopPickCard({
   const under = intent.maxPrice !== null ? intent.maxPrice - p.price : null
   return (
     <motion.article variants={fadeUp} className="overflow-hidden rounded-3xl bg-white shadow-lift ring-1 ring-slate-200/80">
-      <div className="grid md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+      <div>
         <div className="relative">
-          <ProductVisual category={p.category} brand={p.brand} size="lg" className="h-52 md:h-full md:min-h-[24rem]" />
+          <ProductVisual
+            category={p.category}
+            brand={p.brand}
+            image={p.image}
+            alt={p.name}
+            size="lg"
+            className="h-60 sm:h-72 lg:h-80"
+          />
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -98,7 +105,7 @@ export function TopPickCard({
             ))}
           </ul>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_12.5rem] md:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_12.5rem]">
+          <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1fr)_12.5rem]">
             <div>
               <h4 className="text-sm font-semibold text-ink-900">Why it's the pick</h4>
               <ul className="mt-2.5 space-y-2">
@@ -195,7 +202,7 @@ export function AlternativeCard({
       className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-slate-200/80 transition-shadow hover:shadow-lift"
     >
       <div className="flex gap-4 p-4">
-        <ProductVisual category={p.category} size="sm" className="size-20 shrink-0 rounded-xl" />
+        <ProductVisual category={p.category} image={p.image} size="sm" className="size-20 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -269,7 +276,7 @@ export function NearMissCallout({
       variants={fadeUp}
       className="flex flex-col gap-4 rounded-2xl bg-amber-50/80 p-4 ring-1 ring-amber-200/70 sm:flex-row sm:items-center"
     >
-      <ProductVisual category={p.category} size="xs" className="size-12 shrink-0 rounded-xl" />
+      <ProductVisual category={p.category} image={p.image} size="xs" className="size-12 shrink-0 rounded-xl" />
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-semibold text-amber-950">Just over budget: {p.name}</p>
         <p className="mt-0.5 text-amber-900/75">

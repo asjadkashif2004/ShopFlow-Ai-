@@ -68,7 +68,7 @@ export function ComparisonTable({ recs, category }: { recs: Recommendation[]; ca
               {recs.map((r) => (
                 <th key={r.product.id} scope="col" className="px-4 py-3 text-left">
                   <div className="flex items-center gap-2.5">
-                    <ProductVisual category={r.product.category} size="xs" className="size-8 shrink-0 rounded-lg" />
+                    <ProductVisual category={r.product.category} image={r.product.image} size="xs" className="size-8 shrink-0 rounded-lg" />
                     <div className="min-w-0">
                       <div className="text-[11px] font-medium text-slate-400">#{r.rank}</div>
                       <div className="max-w-[10rem] truncate font-semibold text-ink-900" title={r.product.name}>

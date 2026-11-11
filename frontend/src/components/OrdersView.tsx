@@ -68,7 +68,7 @@ export function OrdersView({ orders, config, onShop }: { orders: Order[]; config
               transition={{ delay: i * 0.05, duration: 0.4, ease: EASE }}
               className="flex flex-wrap items-center gap-4 rounded-2xl bg-white p-4 shadow-soft ring-1 ring-slate-200/80"
             >
-              <ProductVisual category={o.category} size="xs" className="size-12 shrink-0 rounded-xl" />
+              <ProductVisual category={o.category} image={o.image} size="xs" className="size-12 shrink-0 rounded-xl" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink-900">{o.productName}</p>
                 <p className="text-xs text-slate-500">

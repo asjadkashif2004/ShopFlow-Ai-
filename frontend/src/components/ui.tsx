@@ -1,24 +1,73 @@
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react'
 import { Star } from 'lucide-react'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import type { ProductImage } from '../api/types'
 import { metaFor } from '../lib/categoryMeta'
 import { cn, formatCount } from '../lib/format'
 import { EASE } from '../lib/motion'
 
-/* Product tile: a calm category illustration instead of stock photos. */
+type VisualSize = 'xs' | 'sm' | 'md' | 'lg'
+
+/* Fixed-size thumbnails get 1x/2x/3x versions; the large tile gets width-based versions. */
+const THUMB_PX: Record<Exclude<VisualSize, 'lg'>, number> = { xs: 48, sm: 80, md: 320 }
+const LARGE_WIDTHS = [480, 640, 960, 1280, 1600, 2000]
+// The top-pick banner spans the results column: at most ~820px wide on desktop.
+const LARGE_SIZES = '(min-width: 1024px) 820px, 100vw'
+
+/** Unsplash resizes on its CDN (and serves AVIF/WebP); any other URL is used as-is. */
+function photoSrc(url: string, width: number, square: boolean, quality: number) {
+  if (!url.startsWith('https://images.unsplash.com/')) return url
+  const q = new URLSearchParams({ w: String(width), q: String(quality), auto: 'format', fit: 'crop' })
+  if (square) q.set('h', String(width))
+  return `${url}?${q}`
+}
+
+function photoProps(url: string, size: VisualSize) {
+  if (size === 'lg') {
+    return {
+      src: photoSrc(url, 960, false, 85),
+      srcSet: LARGE_WIDTHS.map((w) => `${photoSrc(url, w, false, 85)} ${w}w`).join(', '),
+      sizes: LARGE_SIZES,
+    }
+  }
+  const px = THUMB_PX[size]
+  return {
+    src: photoSrc(url, px * 2, true, 80),
+    srcSet: [1, 2, 3].map((d) => `${photoSrc(url, px * d, true, 80)} ${d}x`).join(', '),
+  }
+}
+
+function creditHref(href: string) {
+  // Unsplash asks for a referral tag on links back to the photo.
+  return href.startsWith('https://unsplash.com/') ? `${href}?utm_source=shoppilot&utm_medium=referral` : href
+}
+
+/* Product tile: the product photo, with the category illustration underneath as placeholder and fallback. */
 export function ProductVisual({
   category,
   brand,
+  image,
+  alt = '',
   size = 'md',
   className,
 }: {
   category: string
   brand?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg'
+  image?: ProductImage | null
+  /** Leave empty when the product name is already next to the tile. */
+  alt?: string
+  size?: VisualSize
   className?: string
 }) {
   const m = metaFor(category)
   const iconSize = { xs: 18, sm: 30, md: 44, lg: 76 }[size]
+  const url = image?.url
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const showPhoto = !!url && failedUrl !== url
+  const loaded = showPhoto && loadedUrl === url
+  const big = size === 'md' || size === 'lg'
+
   return (
     <div className={cn('relative flex items-center justify-center overflow-hidden bg-linear-to-br', m.tile, className)}>
       <div aria-hidden className="absolute -right-8 -top-8 size-28 rounded-full bg-white/70 blur-2xl" />
@@ -29,10 +78,51 @@ export function ProductVisual({
         />
       )}
       <m.Icon aria-hidden size={iconSize} strokeWidth={size === 'xs' ? 1.75 : 1.25} className={cn('relative drop-shadow-sm', m.ink)} />
-      {brand && (size === 'md' || size === 'lg') && (
-        <span className="absolute bottom-3 left-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500/80">
+
+      {showPhoto && (
+        <img
+          key={url}
+          {...photoProps(url, size)}
+          alt={alt}
+          loading={size === 'lg' ? 'eager' : 'lazy'}
+          fetchPriority={size === 'lg' ? 'high' : 'auto'}
+          decoding="async"
+          draggable={false}
+          ref={(el) => {
+            // A cached photo can finish before React attaches onLoad.
+            if (el?.complete && el.naturalWidth > 0 && loadedUrl !== url) setLoadedUrl(url)
+          }}
+          onLoad={() => setLoadedUrl(url)}
+          onError={() => setFailedUrl(url)}
+          className={cn(
+            'absolute inset-0 size-full object-cover transition-[opacity,scale] duration-700 ease-out',
+            loaded ? 'scale-100 opacity-100' : 'scale-[1.04] opacity-0',
+          )}
+        />
+      )}
+
+      {loaded && big && (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-black/55 via-black/15 to-transparent" />
+      )}
+      {brand && big && (
+        <span
+          className={cn(
+            'absolute bottom-3 left-4 text-[10px] font-semibold uppercase tracking-[0.2em] transition-colors duration-500',
+            loaded ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]' : 'text-slate-500/80',
+          )}
+        >
           {brand}
         </span>
+      )}
+      {loaded && size === 'lg' && image?.credit && (
+        <a
+          href={image.creditUrl ? creditHref(image.creditUrl) : undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-3 right-4 max-w-[60%] truncate text-[10px] text-white/75 transition-colors hover:text-white"
+        >
+          Photo: {image.credit} / Unsplash
+        </a>
       )}
     </div>
   )

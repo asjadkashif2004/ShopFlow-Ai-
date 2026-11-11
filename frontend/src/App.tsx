@@ -81,7 +81,19 @@ export default function App() {
         <footer className="border-t border-slate-200/70 bg-white/60">
           <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p>ShopPilot AI · Built for the PayPal Hackathon</p>
-            <p>Payments run in PayPal Sandbox, so no real money moves. The demo catalog uses fictional brands.</p>
+            <p>
+              Payments run in PayPal Sandbox, so no real money moves. The demo catalog uses fictional brands, with product
+              photos from{' '}
+              <a
+                href="https://unsplash.com/?utm_source=shoppilot&utm_medium=referral"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-slate-300 underline-offset-2 hover:text-slate-600"
+              >
+                Unsplash
+              </a>
+              .
+            </p>
           </div>
         </footer>
 

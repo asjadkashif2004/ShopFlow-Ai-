@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
             log.error(note)
     if store.kind == "memory" and settings.supabase_url and settings.supabase_key:
         # REST API: used when there is no DB URL, or when the DB URL didn't connect.
-        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
+        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key, catalog)
         try:
             await rest.init()
             store = rest
@@ -82,6 +82,7 @@ async def lifespan(app: FastAPI):
     index = CatalogIndex(store.categories, await store.all_products())
     app.state.ctx = Context(settings=settings, store=store, agents=Agents(settings, index), paypal=PayPalService(settings))
     app.state.db_note = note
+    app.state.catalog = catalog
     # While on the in-memory store, keep trying Supabase (tables not created yet, or the
     # free project is paused) so fixing it on the Supabase side needs no restart.
     app.state.retry_supabase = store.kind == "memory" and bool(settings.supabase_url and settings.supabase_key)
@@ -116,7 +117,7 @@ def supabase_error_note(e: Exception) -> str:
 
 async def _connect_supabase() -> None:
     async with app.state.retry_lock:
-        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key)
+        rest = SupabaseRestStore(settings.supabase_url, settings.supabase_key, app.state.catalog)
         try:
             await rest.init()
         except SupabaseSetupNeeded:

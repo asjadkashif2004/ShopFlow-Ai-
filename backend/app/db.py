@@ -29,6 +29,22 @@ def load_catalog(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+IMAGE_COLS = ("image_url", "image_credit", "image_credit_url")
+
+
+def image_from_row(row: Any) -> dict[str, str] | None:
+    """Product photo from a database row (asyncpg Record or REST dict), if it has one."""
+    url = row.get("image_url") if row is not None else None
+    if not url:
+        return None
+    return {"url": url, "credit": row.get("image_credit") or "", "creditUrl": row.get("image_credit_url") or ""}
+
+
+def catalog_images(catalog: dict[str, Any] | None) -> dict[str, dict[str, str]]:
+    """Photos from the seed catalog, used when the database has no image columns yet."""
+    return {p["id"]: p["image"] for p in (catalog or {}).get("products", []) if p.get("image")}
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -119,6 +135,7 @@ def _product_row(row: asyncpg.Record) -> Product:
         "description": row["description"],
         "specs": row["specs"] or {},
         "tags": list(row["tags"] or []),
+        "image": image_from_row(row),
     }
 
 
@@ -137,13 +154,15 @@ def _order_row(row: asyncpg.Record) -> dict[str, Any]:
         "missionId": row["mission_id"],
         "paymentMode": row["payment_mode"],
         "createdAt": row["created_at"].isoformat(),
+        "image": image_from_row(row),
     }
 
 
-PRODUCT_COLS = "id, category, name, brand, price, rating, review_count, stock, description, specs, tags"
+PRODUCT_COLS = "id, category, name, brand, price, rating, review_count, stock, description, specs, tags, image_url, image_credit, image_credit_url"
 ORDER_SELECT = """
   select o.id, o.paypal_order_id, o.capture_id, o.product_id, o.mission_id, o.amount, o.currency,
-         o.status, o.payment_mode, o.created_at, p.name as product_name, p.brand, p.category
+         o.status, o.payment_mode, o.created_at, p.name as product_name, p.brand, p.category,
+         p.image_url, p.image_credit, p.image_credit_url
   from orders o join products p on p.id = o.product_id
 """
 
@@ -185,15 +204,19 @@ class PostgresStore(Store):
             # Stock is only set on first insert, so purchases are not undone by a restart.
             await conn.executemany(
                 f"""insert into products ({PRODUCT_COLS})
-                    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
+                    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14)
                     on conflict (id) do update set category = excluded.category, name = excluded.name,
                       brand = excluded.brand, price = excluded.price, rating = excluded.rating,
                       review_count = excluded.review_count, description = excluded.description,
-                      specs = excluded.specs, tags = excluded.tags, updated_at = now()""",
+                      specs = excluded.specs, tags = excluded.tags, image_url = excluded.image_url,
+                      image_credit = excluded.image_credit, image_credit_url = excluded.image_credit_url,
+                      updated_at = now()""",
                 [
                     (
                         p["id"], p["category"], p["name"], p["brand"], Decimal(str(p["price"])), Decimal(str(p["rating"])),
                         p["reviewCount"], p["stock"], p["description"], p["specs"], p["tags"],
+                        (p.get("image") or {}).get("url"), (p.get("image") or {}).get("credit"),
+                        (p.get("image") or {}).get("creditUrl"),
                     )
                     for p in prods
                 ],
@@ -327,7 +350,7 @@ class SupabaseError(Exception):
 
 
 REST_PRODUCT_COLS = "id,category,name,brand,price,rating,review_count,stock,description,specs,tags"
-REST_ORDER_SELECT = "*,products(name,brand,category)"
+REST_IMAGE_COLS = ",".join(IMAGE_COLS)
 
 
 def _rest_order(row: dict[str, Any]) -> dict[str, Any]:
@@ -354,7 +377,7 @@ class SupabaseRestStore(Store):
 
     kind = "supabase"
 
-    def __init__(self, url: str, key: str):
+    def __init__(self, url: str, key: str, catalog: dict[str, Any] | None = None):
         import httpx
 
         headers = {"apikey": key, "Content-Type": "application/json"}
@@ -362,6 +385,16 @@ class SupabaseRestStore(Store):
             headers["Authorization"] = f"Bearer {key}"
         self.http = httpx.AsyncClient(base_url=f"{url.rstrip('/')}/rest/v1", headers=headers, timeout=15)
         self._count = 0
+        self.fallback_images = catalog_images(catalog)
+        self.has_image_cols = True
+
+    @property
+    def product_cols(self) -> str:
+        return f"{REST_PRODUCT_COLS},{REST_IMAGE_COLS}" if self.has_image_cols else REST_PRODUCT_COLS
+
+    @property
+    def order_select(self) -> str:
+        return f"*,products(name,brand,category{',' + REST_IMAGE_COLS if self.has_image_cols else ''})"
 
     async def _req(self, method: str, path: str, *, params: Any = None, json_body: Any = None, prefer: str | None = None) -> Any:
         headers = {"Prefer": prefer} if prefer else None
@@ -384,13 +417,22 @@ class SupabaseRestStore(Store):
             for r in rows
         ]
         self._count = len(await self._req("GET", "/products", params={"select": "id"}))
+        try:
+            await self._req("GET", "/products", params={"select": REST_IMAGE_COLS, "limit": "1"})
+        except SupabaseError as e:
+            if e.status != 400 or "42703" not in e.body:
+                raise
+            self.has_image_cols = False
+            log.warning("Product photo columns are missing. Run supabase/002_product_images.sql; using catalog photos meanwhile.")
         log.info("Connected to Supabase (REST API): %d categories, %d products", len(self.categories), self._count)
 
     async def close(self) -> None:
         await self.http.aclose()
 
-    @staticmethod
-    def _product(row: dict[str, Any]) -> Product:
+    def _image(self, row: dict[str, Any] | None, product_id: str) -> dict[str, str] | None:
+        return image_from_row(row or {}) or self.fallback_images.get(product_id)
+
+    def _product(self, row: dict[str, Any]) -> Product:
         return {
             "id": row["id"],
             "category": row["category"],
@@ -403,10 +445,14 @@ class SupabaseRestStore(Store):
             "description": row["description"],
             "specs": row["specs"] or {},
             "tags": row["tags"] or [],
+            "image": self._image(row, row["id"]),
         }
 
+    def _order(self, row: dict[str, Any]) -> dict[str, Any]:
+        return {**_rest_order(row), "image": self._image(row.get("products"), row["product_id"])}
+
     async def all_products(self) -> list[Product]:
-        rows = await self._req("GET", "/products", params={"select": REST_PRODUCT_COLS, "order": "category.asc,price.asc"})
+        rows = await self._req("GET", "/products", params={"select": self.product_cols, "order": "category.asc,price.asc"})
         return [self._product(r) for r in rows]
 
     async def product_count(self) -> int:
@@ -415,9 +461,8 @@ class SupabaseRestStore(Store):
     async def count_in_category(self, slug: str) -> int:
         return len(await self._req("GET", "/products", params={"select": "id", "category": f"eq.{slug}"}))
 
-    @staticmethod
-    def search_params(slug: str, musts: list[Req]) -> list[tuple[str, str]]:
-        params = [("select", REST_PRODUCT_COLS), ("category", f"eq.{slug}"), ("order", "price.asc")]
+    def search_params(self, slug: str, musts: list[Req]) -> list[tuple[str, str]]:
+        params = [("select", self.product_cols), ("category", f"eq.{slug}"), ("order", "price.asc")]
         equals = {r["spec"]: r["equals"] for r in musts if "equals" in r and not r.get("tag")}
         if equals:  # one JSONB containment check covers every equality must-have
             params.append(("specs", "cs." + json.dumps(equals, ensure_ascii=False, separators=(",", ":"))))
@@ -439,7 +484,7 @@ class SupabaseRestStore(Store):
         return [self._product(r) for r in rows]
 
     async def get_product(self, product_id: str) -> Product | None:
-        rows = await self._req("GET", "/products", params={"select": REST_PRODUCT_COLS, "id": f"eq.{product_id}"})
+        rows = await self._req("GET", "/products", params={"select": self.product_cols, "id": f"eq.{product_id}"})
         return self._product(rows[0]) if rows else None
 
     async def mission_started(self, mission_id: str, query: str) -> None:
@@ -518,8 +563,8 @@ class SupabaseRestStore(Store):
         )
 
     async def get_order(self, paypal_order_id: str) -> dict[str, Any] | None:
-        rows = await self._req("GET", "/orders", params={"select": REST_ORDER_SELECT, "paypal_order_id": f"eq.{paypal_order_id}"})
-        return _rest_order(rows[0]) if rows else None
+        rows = await self._req("GET", "/orders", params={"select": self.order_select, "paypal_order_id": f"eq.{paypal_order_id}"})
+        return self._order(rows[0]) if rows else None
 
     async def update_order(self, paypal_order_id: str, *, status: str, capture_id: str | None, paypal_response: Any):
         rows = await self._req(
@@ -537,8 +582,8 @@ class SupabaseRestStore(Store):
         return await self.get_order(paypal_order_id)
 
     async def list_orders(self, limit: int = 50) -> list[dict[str, Any]]:
-        rows = await self._req("GET", "/orders", params={"select": REST_ORDER_SELECT, "order": "created_at.desc", "limit": str(limit)})
-        return [_rest_order(r) for r in rows]
+        rows = await self._req("GET", "/orders", params={"select": self.order_select, "order": "created_at.desc", "limit": str(limit)})
+        return [self._order(r) for r in rows]
 
 
 # --------------------------------------------------------------------------- #
@@ -592,6 +637,7 @@ class MemoryStore(Store):
             "missionId": o.get("mission_id"),
             "paymentMode": o["payment_mode"],
             "createdAt": o["created_at"],
+            "image": p.get("image"),
         }
 
     async def create_order(self, o: dict[str, Any]) -> None:

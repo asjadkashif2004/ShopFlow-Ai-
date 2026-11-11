@@ -183,6 +183,7 @@ export const demoApi: ShopApi = {
       productName: product.name,
       brand: product.brand,
       category: product.category,
+      image: product.image ?? null,
       amount: product.price,
       currency: 'USD',
       status: 'COMPLETED',

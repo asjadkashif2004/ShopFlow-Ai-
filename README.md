@@ -22,6 +22,9 @@ The price always comes from the database, never from the browser, and capture is
 2. Supabase, once: open **SQL Editor → New query**, paste all of [supabase/shoppilot_setup.sql](supabase/shoppilot_setup.sql)
    and click **Run**. It creates the tables with Row Level Security, the access rules for the publishable key,
    and the 60-product seed. Regenerate it with `backend/.venv/Scripts/python backend/scripts/build_supabase_sql.py`.
+   Already ran it before product photos existed? Run [supabase/002_product_images.sql](supabase/002_product_images.sql)
+   once as well; it only adds the photo columns. Product photos come from [Unsplash](https://unsplash.com)
+   (free to use) and each one credits its photographer.
 3. Backend (port 7860):
 
    ```bash

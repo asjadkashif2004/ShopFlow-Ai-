@@ -207,7 +207,7 @@ function OrderSummary({ rec, intent, live }: { rec: Recommendation; intent: Inte
       </h2>
 
       <div className="mt-5 flex gap-4 rounded-2xl bg-white p-3 ring-1 ring-slate-200/80">
-        <ProductVisual category={p.category} size="sm" className="size-16 shrink-0 rounded-xl" />
+        <ProductVisual category={p.category} image={p.image} size="sm" className="size-16 shrink-0 rounded-xl" />
         <div className="min-w-0">
           <p className="truncate font-semibold text-ink-900">{p.name}</p>
           <p className="text-xs text-slate-500">{p.brand}</p>
